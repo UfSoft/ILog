@@ -1,1 +1,7 @@
 ILog.egg-info
+default.css
+.settings
+.project
+.pydevproject
+.tmp_*.html.*~
+.working-dir
