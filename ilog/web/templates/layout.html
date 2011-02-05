@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+    <meta charset="utf-8">
+    <link rel="icon" type="image/ico" href="{{ url_for('.static', filename='favicon.ico') }}">
+    <link class="ui-theme" rel="stylesheet" type="text/css"
+          href="{{ url_for('.static', filename='ext/smoothness/jquery-ui-1.8.9.custom.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='default.css') }}">
+    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-1.4.3.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery.corner.js') }}"></script>
+
+    {% block head %}
+        <title>{% block title %}Welcome{% endblock %} &mdash; ILog</title>
+    {% endblock %}
+  </head>
+  <body class="ui-widget-content">
+    <div id="container">
+      <div id="header-logo">
+        <span class="name">IRC Logging Network</span><br/>
+        <span class="counter">So Far We Have Logged <span id="counter">0</span> Events</span>
+      </div>
+      <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
+        <ul>
+          {% if user %}
+          <li class="first active">
+            {% if user.avatar -%}
+            <img width="22" height="22" alt="" src="https://secure.gravatar.com/avatar/62026667822f948637ca9a6022a511b7?s=140&amp;d=https%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-140.png">
+            {%- endif %}
+            <a href="">Sign Out</a>
+          </li>
+          <li><a href="">My Account</a></li>
+          {% else %}
+          <li class="first"><a href="{{ url_for('account.signin') }}">Sign In</a></li>
+          <li><a href="">Register</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div id="ctx-nav" class="ui-widget-header ui-corner-all">
+        <a class="ui-button-text active" href="{{ url_for('main.index') }}">Home</a>
+        <a class="ui-button-text" href="{{ url_for('account.signin') }}">Networks</a>
+        <a class="ui-button-text" href="{{ url_for('account.signin') }}">Channels</a>
+      </div>
+
+      <div id="body-wrapper">
+        <div id="content" class="ui-widget">
+          {%- block contents %}{% endblock -%}
+        </div>
+        <div id="footer-wrapper">
+          <div id="footer" class="ui-widget-header ui-corner-tr ui-corner-tl">
+            {%- include '_footer.html' -%}
+          </div>
+        </div>
+        <script type="text/javascript">
+          //$("#navigation").corner('round bl 8px');
+          $('#ctx-nav').buttonset();
+        </script>
+        {% block footer %}{% endblock %}
+      </div>
+    </div>
+  </body>
+</html>

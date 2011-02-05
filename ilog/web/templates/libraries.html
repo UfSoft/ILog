@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block contents %}
+<ul>
+  {% for url, name in libraries %}
+  <li><a href="{{ url }}">{{ name }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}
