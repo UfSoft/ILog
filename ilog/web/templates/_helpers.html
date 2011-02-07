@@ -1,0 +1,24 @@
+{% macro render_flash_message(category, message) %}
+  {% if category=='error' %}
+  <div class="flash-message ui-state-error ui-corner-all">
+    <p>
+      <span class="message-icon ui-icon ui-icon-alert"></span>
+  {% else %}
+  <div class="flash-message ui-state-highlight ui-corner-all">
+    <p>
+    {% if category=='ok' %}
+      <span class="message-icon ui-icon ui-icon-circle-check"></span>
+    {% elif category=='add' %}
+      <span class="message-icon ui-icon ui-icon-circle-plus"></span>
+    {% elif category=='remove' %}
+      <span class="message-icon ui-icon ui-icon-circle-minus"></span>
+    {% elif category=='config' %}
+      <span class="message-icon ui-icon ui-icon-wrench"></span>
+    {% else %}
+      <span class="message-icon ui-icon ui-icon-info"></span>
+    {% endif %}
+  {% endif %}
+      <span>{{ message }}</span>
+    </p>
+  </div>
+{% endmacro %}

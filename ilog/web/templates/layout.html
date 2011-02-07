@@ -1,3 +1,4 @@
+{% from "_helpers.html" import render_flash_message %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -18,10 +19,6 @@
   </head>
   <body class="ui-widget-content">
     <div id="container">
-      <div id="header-logo">
-        <span class="name">IRC Logging Network</span><br/>
-        <span class="counter">So Far We Have Logged <span id="counter">0</span> Events</span>
-      </div>
       <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
         <ul>
           {% if user %}
@@ -38,6 +35,10 @@
           {% endif %}
         </ul>
       </div>
+      <div id="header-logo">
+        <span class="name">IRC Logging Network</span><br/>
+        <span class="counter">So Far We Have Logged <span id="counter">0</span> Events</span>
+      </div>
       <div id="ctx-nav" class="ui-widget-header ui-corner-all">
         <a class="ui-button-text active" href="{{ url_for('main.index') }}">Home</a>
         <a class="ui-button-text" href="{{ url_for('account.signin') }}">Networks</a>
@@ -45,20 +46,23 @@
       </div>
 
       <div id="body-wrapper">
+        {% for category, message in get_flashed_messages(True) %}
+          {{ render_flash_message(category, message) }}
+        {% endfor %}
         <div id="content" class="ui-widget">
           {%- block contents %}{% endblock -%}
         </div>
-        <div id="footer-wrapper">
-          <div id="footer" class="ui-widget-header ui-corner-tr ui-corner-tl">
-            {%- include '_footer.html' -%}
-          </div>
+      </div>
+      <div id="footer-wrapper">
+        <div id="footer" class="ui-widget-header ui-corner-tr ui-corner-tl">
+          {%- include '_footer.html' -%}
         </div>
-        <script type="text/javascript">
-          //$("#navigation").corner('round bl 8px');
-          $('#ctx-nav').buttonset();
-        </script>
-        {% block footer %}{% endblock %}
       </div>
     </div>
+    <script type="text/javascript">
+      //$("#navigation").corner('round bl 8px');
+      $('#ctx-nav').buttonset();
+    </script>
+    {% block footer %}{% endblock %}
   </body>
 </html>
