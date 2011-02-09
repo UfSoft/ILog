@@ -10,6 +10,10 @@
 
 from ilog.common.evblinker import signal
 
+database_engine_created = signal("database-engine-created", """\
+This signal is emmited once we have a database engine.
+""")
+
 database_upgraded = signal("database-upgraded", """\
 This signal is emmited when database has been upgraded.
 """)
