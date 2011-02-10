@@ -105,6 +105,9 @@ class Privilege(Model):
     id      = dbm.Column(dbm.Integer, primary_key=True)
     name    = dbm.Column(dbm.String(50), unique=True)
 
+    def __init__(self, name):
+        self.name = name
+
 
 account_privileges = dbm.Table('account_privileges', metadata,
     dbm.Column('account_id', dbm.ForeignKey('accounts.id')),
@@ -123,6 +126,9 @@ class Group(Model):
     privileges    = dbm.relation("Privilege", secondary="group_privileges",
                                  backref="priveliged_groups", lazy=True,
                                  collection_class=set, cascade='all, delete')
+
+    def __init__(self, name):
+        self.name = name
 
 group_accounts = dbm.Table('group_accounts', metadata,
     dbm.Column('group_id', dbm.ForeignKey('groups.id')),
@@ -181,6 +187,19 @@ def upgrade(migrate_engine):
     # named 'migrate_engine' imported from migrate.
     log.debug("Creating Database Tables")
     metadata.create_all(migrate_engine)
+
+    session = create_session(migrate_engine, autoflush=True, autocommit=False)
+    admins = Group("Administrators")
+    admins.privileges.add(Privilege("administrator"))
+    session.add(admins)
+    managers = Group("Managers")
+    managers.privileges.add(Privilege("manager"))
+    session.add(managers)
+    session.commit()
+
+    # The first account created will be an administrator!!!
+    migrate_engine.execute(group_accounts.insert(), group_id=admins.id,
+                           account_id=1)
 
 def downgrade(migrate_engine):
     # Operations to reverse the above upgrade go here.
