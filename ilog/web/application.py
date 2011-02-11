@@ -22,10 +22,11 @@ eventlet.import_patched('flaskext.mail')
 # Now the usefull imports
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
-from flaskext.mail import Mail
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm
 from ilog.web import defaults
+from .signals import webapp_setup_complete, webapp_shutdown
+from .mail import mail
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,6 @@ class Application(Flask):
         dbm.pool_recycle = self.config.get('SQLALCHEMY_POLL_RECYCLE', 3600)
         dbm.set_database_uri(self.config['SQLALCHEMY_DATABASE_URI'])
 
-        mail.init_app(self)
         cache.init_app(self)
 
         if self.debug:
@@ -91,8 +91,12 @@ class Application(Flask):
         self.register_module(main)
         self.register_module(account)
 
+        # WebApp setup is complete. Signal it.
+        webapp_setup_complete.send(self)
+
     def shutdown(self):
         log.info("ILog web Application shut down")
+        webapp_shutdown.send(self, _waitall=True)
         shutdown.send(self, _waitall=True)
 
 
@@ -153,7 +157,6 @@ def redirect_back(*args, **kwargs):
 app = Application()
 
 config = app.config
-mail = Mail(app)
 cache = Cache(app)
 babel = Babel(app, default_locale='en', default_timezone='UTC',
               date_formats=None, configure_jinja=True)

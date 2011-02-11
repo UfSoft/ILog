@@ -14,13 +14,13 @@ import simplejson
 from eventlet.green import urllib, urllib2
 from flask import Module, url_for, g, flash, request, session, render_template
 from flaskext.babel import gettext as _
-from flaskext.mail import Message
 from flaskext.principal import AnonymousIdentity, Identity, identity_changed
 from ilog.database import dbm
 from ilog.database.models import (Account, AccountProvider, EMailAddress,
                                   ActivationKey, ProfilePhoto)
-from ilog.web.application import app, config, mail, redirect_to, redirect_back
+from ilog.web.application import app, config, redirect_to, redirect_back
 from ilog.web.forms import LoginForm, RegisterForm, ProfileForm, ExtraEmailForm
+from ilog.web.mail import mail, Message
 from ilog.web.permissions import authenticated_permission
 
 log = logging.getLogger(__name__)
