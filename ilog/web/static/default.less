@@ -123,7 +123,7 @@ a:hover, .ui-state-default a:hover {
   float: right;
   position: absolute;
   right: 15px;
-  top: -10px;
+  top: -5px;
   padding: 1px 5px 3px 5px;
 
   ul {
@@ -159,7 +159,7 @@ a:hover, .ui-state-default a:hover {
 #ctx-nav.ui-buttonset .ui-button { margin-right: -0.7em; }
 
 #ctx-nav {
-  margin: 10px 5px 12px 5px;
+  margin: 10px 5px 10px 5px;
   padding: 3px 4px;
   text-shadow: 1px 1px 1px #999999;
 
@@ -169,7 +169,7 @@ a:hover, .ui-state-default a:hover {
 }
 
 div.flash-message {
-  margin: 2px;
+  margin: 10px 5px;
   padding: 3px 3px;
 
   p {
@@ -182,14 +182,34 @@ div.flash-message {
       margin-right: 0.3em;
       margin-left: 3px;
     }
+
+    a {
+      font-style: italic;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #5f91ae;
+    }
   }
 }
 
 
 #content {
   font-family: "Gputeks Regular";
+  margin-top: 10px;
 
   form {
+
+    div.formbox.error {
+      border-color: red;
+    }
+
+    div.actions.error {
+      border-left-color: red;
+      border-right-color: red;
+      border-bottom-color: red;
+    }
 
     div.formbox {
       margin: 0;
@@ -218,8 +238,12 @@ div.flash-message {
       font-family: "Gputeks Bold";
       padding: 3px 3px 3px 10px;
       text-shadow: 0 1px 1px #ccc;
-      margin: 2px 2px;
+      margin: 4px;
       color: #444;
+    }
+
+    fieldset.profile-photo {
+      float: left;
     }
 
     fieldset {
@@ -242,6 +266,11 @@ div.flash-message {
       border-color: #e82828;
     }
 
+    p.description {
+      font-style: italic;
+      padding: 0 10px;
+    }
+
     span.help {
       font-style: italic;
       font-size: 12px;
@@ -252,6 +281,11 @@ div.flash-message {
       padding-top: 2px;
       font-size: 14px;
       vertical-align: middle;
+    }
+
+    ul.multi-checkbox {
+      list-style-type: none;
+      padding-left: 10px;
     }
 
     ul.errors {
@@ -276,3 +310,4 @@ div.flash-message {
     }
   }
 }
+

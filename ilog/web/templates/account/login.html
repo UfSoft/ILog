@@ -1,33 +1,24 @@
-{% extends "layout.html" %}
-{% from "_form_helpers.html" import render_field %}
+{% extends "_formbase.html" %}
 
-{% block title %}Authenticate{% endblock %}
-
-{% block contents %}
-  <form method="POST" action="">
-    <div class="formbox ui-corner-tl ui-corner-tr">
-      <h3 class="ui-state-default ui-corner-tl ui-corner-tr">{{ form.title }}</h3>
-      {% if app_domain -%}
-      <table height="250">
-        <tr>
-          <td width="100%" style="vertical-align: top;">
-      {% endif %}
-            {{ form.hidden_tag() }}
-            {{ render_field(form.username, {'size': 20}) }}
-            {{ render_field(form.password, {'size': 20}) }}
-      {% if app_domain -%}
-          </td>
-          <td width="400">
-            <iframe src="http://ilog.rpxnow.com/openid/embed?token_url={{ token_url }}&language_preference={{ config.get("BABEL_DEFAULT_LOCALE", "en") }}"
-                    scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
-          </td>
-        </tr>
-      </table>
-      {% endif %}
-    </div>
-
-    <div class="actions ui-widget-header ui-corner-bl ui-corner-br">
-      <input class="ui-button" type="submit" value="{{ _('Authenticate') }}">
-    </div>
-  </form>
+{% block form_contents %}
+  {% if app_domain -%}
+  <table height="250">
+    <tr>
+      <td width="100%" style="vertical-align: top;">
+  {% endif %}
+        {{ form.hidden_tag() }}
+        {{ render_field(form.username, {'size': 20}) }}
+        {{ render_field(form.password, {'size': 20}) }}
+  {% if app_domain -%}
+      </td>
+      <td width="400">
+        <iframe src="http://ilog.rpxnow.com/openid/embed?token_url={{ token_url }}&language_preference={{ config.get("BABEL_DEFAULT_LOCALE", "en") }}"
+                scrolling="no" frameBorder="no" allowtransparency="true"></iframe>
+      </td>
+    </tr>
+  </table>
+  {% endif %}
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" type="submit" value="{{ _('Authenticate') }}">
 {% endblock %}

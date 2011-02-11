@@ -8,52 +8,83 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import logging
+import eventlet
+from flask import flash, g, request
 from flaskext.principal import *
 from sqlalchemy.exc import OperationalError
+from ilog.database import dbm
 from ilog.database.signals import database_setup
-from ilog.database.models import Account
-from .application import app
+from ilog.database.models import Account, Privilege
+from .application import app, redirect_to
 
-principal = Principal(app, use_sessions=True)
+log = logging.getLogger(__name__)
 
-admin_permission = Permission(RoleNeed('admin'))
+Identity.__repr__ = lambda x: """\
+<Identity name="%s" auth_type="%s" provides=%s>""" % (x.name, x.auth_type,
+                                                      x.provides)
+
+principal = Principal(app, use_sessions=False, skip_static=True)
+
 anonymous_permission = Permission()
-authenticated_permission = Permission(RoleNeed('authenticated'))
-
+admin_permission = Permission(RoleNeed('administrator'))
+manager_permission = Permission(RoleNeed('manager'))
+authenticated_permission = Permission(TypeNeed('authenticated'))
 
 @principal.identity_loader
 def load_request_identity():
-    print "On load_request_identity"
-    if 'identity.name' in session:
-        identity = Identity(session['identity.name'])
-        return identity
-    return AnonymousIdentity()
+    log.trace("Loading request identity. Session: %s", session)
+    if "uid" in session:
+        identity = Identity(session['uid'], "cookie")
+    else:
+        identity = AnonymousIdentity()
+    return identity
 
 @principal.identity_saver
 def save_request_identity(identity):
-    print "On save_request_identity"
-#    if identity.name != 'anon':
-#        session['id'] = identity.name
-    print session
+    log.trace("On save_request_identity: %s", identity)
+    if not identity.account:
+        log.trace("No account associated with identity. Nothing to store.")
+        return
+
+    for need in identity.provides:
+        log.debug("Identiy provides: %s", need)
+        if need.method in ("type", "role"):
+            # We won't store type methods, ie, "authenticated", nor, role
+            # methods which are permissions belonging to groups and managed
+            # on the administration panel.
+            continue
+
+        privilege = Privilege.query.get(need)
+        if not privilege:
+            log.debug("Privilege does not existe. creating...")
+            privilege = Privilege(need)
+
+        if privilege not in identity.account.privileges:
+            identity.account.privileges.add(privilege)
+
+    dbm.session.commit()
+    session["uid"] = identity.account.id
+    session.modified = True
 
 @identity_loaded.connect_via(app)
 def on_identity_loaded(sender, identity):
-    print "On identity_loaded"
+    log.trace("Identity loaded: %s", identity)
     try:
-        account = Account.query.get(identity.name)
+        identity.account = account = Account.query.get(identity.name)
         if account:
             account.update_last_login()
-            identity.provides.add(RoleNeed('authenticated'))
-            # Update the roles that a user can provide
-            for role in account.roles:
-                identity.provides.add(RoleNeed(str(role.name)))
-            identity.account = account
+            identity.provides.add(TypeNeed('authenticated'))
+            # Update the privileges that a user has
+            for privilege in account.privileges:
+                identity.provides.add(ItemNeed(privilege.name))
+            for group in account.groups:
+                # And for each of the groups the user belongs to
+                for privilege in group.privileges:
+                    # Add the group privileges to the user
+                    identity.provides.add(RoleNeed(privilege.name))
+
     except OperationalError:
         # Database has not yet been setup
         pass
 
-#@database_setup.connect_via(app)
-#def connect_signals():
-#    principal.identity_loader(load_request_identity)
-#    principal.identity_saver(save_request_identity)
-#    identity_loaded.connect(on_identity_loaded)

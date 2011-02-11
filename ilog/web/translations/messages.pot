@@ -1,0 +1,276 @@
+# Translations template for ILog.
+# Copyright (C) 2011 UfSoft.org
+# This file is distributed under the same license as the ILog project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2011.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ILog 0.1-dev\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2011-02-09 22:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.0dev-r540\n"
+
+#: ilog/web/application.py:193
+msgid "You have not signed in yet."
+msgstr ""
+
+#: ilog/web/application.py:203
+msgid "Sign-In"
+msgstr ""
+
+#: ilog/web/application.py:204 ilog/web/templates/account/register.html:12
+msgid "Register"
+msgstr ""
+
+#: ilog/web/application.py:206
+msgid "Sign-Out"
+msgstr ""
+
+#: ilog/web/application.py:207 ilog/web/forms.py:132
+msgid "My Profile"
+msgstr ""
+
+#: ilog/web/application.py:210
+msgid "Administration"
+msgstr ""
+
+#: ilog/web/forms.py:62
+msgid "Form Token Is Invalid. You MUST have cookies enabled."
+msgstr ""
+
+#: ilog/web/forms.py:67
+msgid "Please Authenticate"
+msgstr ""
+
+#: ilog/web/forms.py:68 ilog/web/forms.py:77 ilog/web/forms.py:134
+msgid "Username"
+msgstr ""
+
+#: ilog/web/forms.py:69
+msgid "Your username"
+msgstr ""
+
+#: ilog/web/forms.py:70 ilog/web/forms.py:80
+msgid "Password"
+msgstr ""
+
+#: ilog/web/forms.py:71
+msgid "Your password"
+msgstr ""
+
+#: ilog/web/forms.py:74
+msgid "Please Register"
+msgstr ""
+
+#: ilog/web/forms.py:78
+msgid "Email"
+msgstr ""
+
+#: ilog/web/forms.py:79 ilog/web/forms.py:136
+msgid "Display Name"
+msgstr ""
+
+#: ilog/web/forms.py:80
+#, python-format
+msgid ""
+"Please provide a password if you wish to sign-in directly on %(app)s and not "
+"the account you're using to register."
+msgstr ""
+
+#: ilog/web/forms.py:84
+msgid "Confirm Password"
+msgstr ""
+
+#: ilog/web/forms.py:85
+msgid "Passwords do not match"
+msgstr ""
+
+#: ilog/web/forms.py:89
+msgid "An account using this provider is already registred with us."
+msgstr ""
+
+#: ilog/web/forms.py:94
+#, python-format
+msgid "The username \"%(username)s\" is already in use. Please choose another one."
+msgstr ""
+
+#: ilog/web/forms.py:137
+msgid "Timezone"
+msgstr ""
+
+#: ilog/web/forms.py:138
+msgid "Locale"
+msgstr ""
+
+#: ilog/web/forms.py:140
+msgid "Account Providers"
+msgstr ""
+
+#: ilog/web/forms.py:142
+msgid "Unselected checkboxes will remove those providers from your account"
+msgstr ""
+
+#: ilog/web/forms.py:166
+msgid "From now on you must use your username and respectivepassword to authenticate."
+msgstr ""
+
+#: ilog/web/forms.py:176
+#, python-format
+msgid "Your \"%(provider)s\" account provider was removed sucessfully."
+msgstr ""
+
+#: ilog/web/forms.py:181
+msgid "Extra Email Address"
+msgstr ""
+
+#: ilog/web/templates/account/extra_email.html:4
+#, python-format
+msgid "Would you like to add the email address %(email_address)s to your account?"
+msgstr ""
+
+#: ilog/web/templates/account/extra_email.html:10
+msgid "Yes"
+msgstr ""
+
+#: ilog/web/templates/account/extra_email.html:11
+msgid "No"
+msgstr ""
+
+#: ilog/web/templates/account/login.html:23
+msgid "Authenticate"
+msgstr ""
+
+#: ilog/web/templates/account/profile.html:27
+msgid "Associate Another Account Provider"
+msgstr ""
+
+#: ilog/web/templates/account/profile.html:33
+msgid "Update"
+msgstr ""
+
+#: ilog/web/templates/emails/initial_email_confirm.txt:2
+#, python-format
+msgid ""
+"Hi %(name)s!\n"
+"\n"
+"You have signed up on %(site)s but your account is not yet activated.\n"
+"Please follow the link bellow to complete the registration and activate\n"
+"your account:\n"
+"\n"
+"  %(activation_url)s\n"
+"\n"
+"See you soon on %(site)s!"
+msgstr ""
+
+#: ilog/web/templates/emails/welcome.txt:2
+#, python-format
+msgid ""
+"Hi %(name)s. Welcome to %(site)s!\n"
+"\n"
+"Thank you for confirming your email address.\n"
+"\n"
+"See you soon!"
+msgstr ""
+
+#: ilog/web/views/account.py:78
+msgid "Something went wrong signing-in with your other account. Please try again."
+msgstr ""
+
+#: ilog/web/views/account.py:87
+msgid "Welcome to ILog please confirm your details and create your account!"
+msgstr ""
+
+#: ilog/web/views/account.py:93
+#, python-format
+msgid "Welcome back %(display_name)s!"
+msgstr ""
+
+#: ilog/web/views/account.py:114 ilog/web/views/account.py:120
+msgid "Something went wrong signing-in with your account provider. Please try again."
+msgstr ""
+
+#: ilog/web/views/account.py:128
+msgid "You already have this login provider associated with your account."
+msgstr ""
+
+#: ilog/web/views/account.py:131
+msgid "Another account(not your's) is already associated with this provider."
+msgstr ""
+
+#: ilog/web/views/account.py:138
+#, python-format
+msgid ""
+"Another account using the email address %(email_address)s is already "
+"registred with us. Do you have two accounts with us!?"
+msgstr ""
+
+#: ilog/web/views/account.py:157
+#, python-format
+msgid "Sucessfuly added the account provider \"%(provider)s\" to your account"
+msgstr ""
+
+#: ilog/web/views/account.py:173
+#, python-format
+msgid "The email address \"%(provider_email)s\" won't be added to your account"
+msgstr ""
+
+#: ilog/web/views/account.py:183 ilog/web/views/account.py:284
+#: ilog/web/views/account.py:337
+msgid "ILog: Please Confirm You Email Address"
+msgstr ""
+
+#: ilog/web/views/account.py:194
+#, python-format
+msgid "An email has been sent to confirm the email address %(email_address)s."
+msgstr ""
+
+#: ilog/web/views/account.py:215
+msgid "Account details updated."
+msgstr ""
+
+#: ilog/web/views/account.py:228
+msgid "You're already authenticated!"
+msgstr ""
+
+#: ilog/web/views/account.py:233
+msgid ""
+"Account registrations will be performed after signing-in using one of the "
+"following services."
+msgstr ""
+
+#: ilog/web/views/account.py:254
+#, python-format
+msgid ""
+"We already have an account using this provider. Please sign-in using your "
+"account with %(provider)s"
+msgstr ""
+
+#: ilog/web/views/account.py:294
+msgid "An email has been sent to confirm your email address"
+msgstr ""
+
+#: ilog/web/views/account.py:305
+msgid "Activation Key Not Known. Plobably Expired"
+msgstr ""
+
+#: ilog/web/views/account.py:312
+#, python-format
+msgid "ILog: Welcome to %(website)s"
+msgstr ""
+
+#: ilog/web/views/account.py:320
+msgid "Your account is now fully active."
+msgstr ""
+
+#: ilog/web/views/account.py:347
+#, python-format
+msgid "An email has been sent to %(address)s in order to confirm the email address"
+msgstr ""
+

@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block title %}{{ form.title }}{% endblock %}
+
+{% block contents %}
+  <form method="POST" action="">
+    <div class="formbox ui-corner-tl ui-corner-tr{% if form.errors %} error{% endif %}">
+      <h3 class="ui-state-default ui-corner-tl ui-corner-tr">{% block form_title %}{{ form.title }}{% endblock %}</h3>
+      {{ form.hidden_tag() }}
+      {% block form_contents %}{% endblock %}
+    </div>
+    <div class="actions ui-widget-header ui-corner-bl ui-corner-br{% if form.errors %} error{% endif %}">
+      {% block form_actions %}{% endblock %}
+    </div>
+  </form>
+{% endblock %}
+
+{% block footer %}
+<script type="text/javascript">
+  $(document).ready(function(){
+    console.log("_formbase script");
+    var inputs = $("div.actions>input");
+    $("div.actions>input").each(function(){
+      $(this).addClass('ui-button');
+    })
+  })
+</script>
+{% block form_footer %}{% endblock %}
+{% endblock %}

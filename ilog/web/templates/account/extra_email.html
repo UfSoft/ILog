@@ -1,0 +1,12 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  <p class="description">{% trans email_address=email_address -%}
+    Would you like to add the email address {{ email_address }} to your account?
+  {%- endtrans %}</p>
+{% endblock %}
+
+{% block form_actions %}
+  <input type="submit" name="yes" value="{{ _('Yes') }}">
+  <input type="submit" name="no" value="{{ _('No') }}">
+{% endblock %}

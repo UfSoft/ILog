@@ -1,0 +1,51 @@
+{% extends "_formbase.html" %}
+{% from "_form_helpers.html" import render_disabled_input %}
+
+{% block form_contents %}
+  {% if profile_photo %}
+    <fieldset class="profile-photo ui-corner-all">
+      <legend>Profile Photo</legend>
+      <img class="profile" src="{{ profile_photo.url }}"/>
+    </fieldset>
+  {% endif %}
+  {{ render_disabled_input(form.username, {'size': 20}) }}
+  {{ render_field(form.display_name, {'size': 20}) }}
+  {{ render_field(form.timezone) }}
+  {{ render_field(form.locale) }}
+  <fieldset>
+    <legend>{% if form.providers.label %}<label for="{{ form.providers.id }}">{{ form.providers.label }}</label>{% endif %}</legend>
+    {% if form.providers.description %}
+    <span class="help">{{ form.providers.description }}</span><br/>
+    {% endif %}
+    {% if form.providers.errors %}
+    <span class="error">{% for error in form.providers.errors -%}{{ error }}&nbsp;{% endfor %}</span>
+    {% endif %}
+    {{ form.providers() }}
+    {% if app_domain -%}
+      <a class="rpxnow" onclick="return false;"
+         href="http://{{ app_domain }}/openid/embed?token_url={{ token_url }}">
+        <input type="button" class="ui-button disabled" disabled="disabled" value="{{ _('Associate Another Account Provider') }}"></input>
+      </a>
+    {%- endif %}
+  </fieldset>
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" type="submit" value="{{ _('Update') }}">
+{% endblock %}
+
+
+{% block form_footer %}
+   {% if app_domain -%}
+   <script type="text/javascript">
+     var rpxJsHost = (("https:" == document.location.protocol) ? "https://" : "http://static.");
+     document.write(unescape("%3Cscript src='" + rpxJsHost + "rpxnow.com/js/lib/rpx.js' type='text/javascript'%3E%3C/script%3E"));
+   </script>
+  <script type="text/javascript">
+    RPXNOW.overlay = true;
+    RPXNOW.language_preference = '{{ config.get("BABEL_DEFAULT_LOCALE", "en") }}';
+    $(document).ready(function() {
+      $('a.rpxnow>input').attr('disabled', '').removeClass("disabled");
+    })
+  </script>
+  {%- endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  {{ render_field(form.username, {'size': 20}) }}
+  {{ render_field(form.email, {'size': 20}) }}
+  {{ render_field(form.display_name, {'size': 20}) }}
+  {{ render_field(form.password, {'size': 20}) }}
+  {{ render_field(form.password_confirm, {'size': 20}) }}
+{% endblock %}
+
+{% block form_actions %}
+  <input class="ui-button" type="submit" value="{{ _('Register') }}">
+{% endblock %}

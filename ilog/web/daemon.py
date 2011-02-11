@@ -11,9 +11,12 @@
 from eventlet.hubs import use_hub, get_hub
 import eventlet
 import time
+eventlet.patcher.monkey_patch(all=False, thread=True, socket=True)
+
 use_hub('zeromq')
 from eventlet import debug, wsgi
-debug.hub_blocking_detection(True, 0.5)
+#debug.hub_blocking_detection(True, 0.5)
+debug.hub_blocking_detection(True, 1)
 
 import logging
 from giblets import ComponentManager
@@ -31,10 +34,12 @@ class FilelikeLogger(object):
 
 class Daemon(BaseDaemon):
 
-    def __init__(self, serve_host="127.0.0.1", serve_port=5000, **kwargs):
+    def __init__(self, serve_host="127.0.0.1", serve_port=5000,
+                 use_reloader=False, **kwargs):
         super(Daemon, self).__init__(**kwargs)
         self.serve_host = serve_host
         self.serve_port = serve_port
+        self.use_reloader = use_reloader
 
     def prepare(self):
         super(Daemon, self).prepare()
@@ -46,6 +51,9 @@ class Daemon(BaseDaemon):
                           help="Hostname or IP to bind the webserver to.")
         parser.add_option('-P', '--port', default=5000, type="int",
                           help="Port number to bind the webserver to.")
+        parser.add_option('--use-reloader', default=False, action="store_true",
+                          help="Use Werkzeug's reloader. DO NOT USE THIS IN "
+                               "PRODUCTION!!!")
         (options, args) = parser.parse_args()
 
         if args:
@@ -58,7 +66,7 @@ class Daemon(BaseDaemon):
                   pidfile=options.pidfile, logfile=options.logfile,
                   detach_process=options.detach_process, uid=options.uid,
                   gid=options.gid, working_directory=options.working_dir,
-                  loglevel=options.loglevel)
+                  loglevel=options.loglevel, use_reloader=options.use_reloader)
         return cli.run_daemon()
 
     def run(self):
@@ -66,14 +74,22 @@ class Daemon(BaseDaemon):
         from ilog.common.signals import daemonized, running
         logging.getLogger(__name__).info("Webserver Daemon Running")
         daemonized.send(self)
-        eventlet.spawn(
-            wsgi.server,
-            eventlet.listen((self.serve_host, self.serve_port)),
-            app.wsgi_app,
-            log=FilelikeLogger(),
-            log_format=FilelikeLogger.LOG_FORMAT
-        )
+        def start_serving():
+            wsgi.server(
+                eventlet.listen((self.serve_host, self.serve_port)),
+                app.wsgi_app,
+                log=FilelikeLogger(),
+                log_format=FilelikeLogger.LOG_FORMAT
+            )
+
+        if self.use_reloader:
+            import werkzeug.serving
+            start_serving = werkzeug.serving.run_with_reloader(start_serving)
+
+        eventlet.spawn(start_serving)
         running.send(self)
+
+
         while True:
             eventlet.sleep(1)
 

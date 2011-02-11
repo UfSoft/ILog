@@ -21,18 +21,16 @@
     <div id="container">
       <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
         <ul>
-          {% if user %}
+          {% if profile_photo -%}
           <li class="first active">
-            {% if user.avatar -%}
-            <img width="22" height="22" alt="" src="https://secure.gravatar.com/avatar/62026667822f948637ca9a6022a511b7?s=140&amp;d=https%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-140.png">
-            {%- endif %}
-            <a href="">Sign Out</a>
+            <img width="22" height="22" alt="" src="{{ profile_photo.url }}">
           </li>
-          <li><a href="">My Account</a></li>
-          {% else %}
-          <li class="first"><a href="{{ url_for('account.signin') }}">Sign In</a></li>
-          <li><a href="">Register</a></li>
-          {% endif %}
+          {%- endif %}
+          {% for url, name, class in ctxnav %}
+            <li{% if class %} class="{{class}}"{% endif %}>
+              <a href="{{ url }}">{{ name }}</a>
+            </li>
+          {% endfor %}
         </ul>
       </div>
       <div id="header-logo">
@@ -42,7 +40,7 @@
       <div id="ctx-nav" class="ui-widget-header ui-corner-all">
         <a class="ui-button-text active" href="{{ url_for('main.index') }}">Home</a>
         <a class="ui-button-text" href="{{ url_for('account.signin') }}">Networks</a>
-        <a class="ui-button-text" href="{{ url_for('account.signin') }}">Channels</a>
+        <a class="ui-button-text" href="{{ url_for('account.register') }}">Channels</a>
       </div>
 
       <div id="body-wrapper">

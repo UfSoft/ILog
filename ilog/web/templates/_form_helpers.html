@@ -11,3 +11,16 @@
   {% endif %}
   </fieldset>
 {% endmacro %}
+
+{% macro render_disabled_input(field, options={}, show_description=True) %}
+  <fieldset class="ui-corner-all">
+  <legend>{% if field.label %}<label for="{{ field.id }}">{{ field.label }}</label>{% endif %}</legend>
+  {% if field.description %}
+    <span class="help">{{ field.description }}</span><br/>
+  {% endif %}
+  <input size="20" name="{{ field.id }}" value="{{ field._value() }}" disabled="disabled"/>
+  {% if field.errors %}
+    <span class="error">{% for error in field.errors -%}{{ error }}&nbsp;{% endfor %}</span>
+  {% endif %}
+  </fieldset>
+{% endmacro %}

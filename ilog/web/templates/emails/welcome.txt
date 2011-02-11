@@ -1,0 +1,9 @@
+{% extends 'emails/layout.txt' -%}
+{% block body %}{% trans name=account.display_name, site='ILog' -%}
+
+Hi {{ name }}. Welcome to {{ site }}!
+
+Thank you for confirming your email address.
+
+See you soon!
+{%- endtrans %}{% endblock %}

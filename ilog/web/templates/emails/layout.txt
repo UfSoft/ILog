@@ -1,0 +1,6 @@
+{% block body %}{% endblock %}
+{%- if 'EMAIL_SIGNATURE' in config %}
+
+{{ '-- ' }}
+{{ config['EMAIL_SIGNATURE'] }}
+{%- endif %}
