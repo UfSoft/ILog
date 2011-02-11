@@ -277,24 +277,8 @@ class DatabaseManager(ComponentBase):
                 options['use_native_unicode'] = self.native_unicode
 
                 if hasattr(extensions, 'set_wait_callback'):
-                    from eventlet.hubs import trampoline
-                    from psycopg2 import OperationalError
-                    def eventlet_wait_callback(conn, timeout=-1):
-                        """A wait callback useful to allow eventlet to work with
-                        Psycopg."""
-                        while True:
-                            state = conn.poll()
-                            if state == extensions.POLL_OK:
-                                break
-                            elif state == extensions.POLL_READ:
-                                trampoline(conn.fileno(), read=True)
-                            elif state == extensions.POLL_WRITE:
-                                trampoline(conn.fileno(), write=True)
-                            else:
-                                raise OperationalError(
-                                    "Bad result from poll: %r" % state
-                                )
-                    extensions.set_wait_callback(eventlet_wait_callback)
+                    from eventlet.support import psycopg2_patcher
+                    psycopg2_patcher.make_psycopg_green()
 
         dialect_cls = info.get_dialect()
 
