@@ -14,6 +14,7 @@ import logging
 import eventlet
 from urlparse import urlparse, urljoin
 from flask import Flask, flash, g, redirect, url_for, request, session, Markup
+from flask.signals import request_started, request_finished
 
 # Import Green patched versions first
 eventlet.import_patched('flaskext.cache')
@@ -214,12 +215,8 @@ def account_related_actions():
     if account is None:
         profile_photo = None
     else:
-        @cache.memoize(3600)
-        def build_invalid_paths():
-            return (url_for('account.register'),
-                    url_for('account.resend_activation_email'))
-
-        if not account.confirmed and request.path not in build_invalid_paths():
+        if not account.confirmed and not \
+                                session.get('_skip_verified_warning', False):
             message = Markup("You're account is not yet verified! "
                              "<a href=\"%s\">Resend confirmation email</a>." %
                              url_for('account.resend_activation_email'))
@@ -229,14 +226,36 @@ def account_related_actions():
 
     return dict(profile_photo=profile_photo)
 
-#@app.context_processor
-@app.after_request
-def store_redirect_target(response):
-    redirect_target = get_redirect_target(session.get('_redirect_target', ()))
+@request_started.connect_via(app)
+def on_request_started(app):
+    if request.path.startswith(app.static_path):
+        return
+
+    @cache.memoize(3600)
+    def build_no_warning_urls():
+        return (
+            url_for('account.register'),
+            url_for('account.resend_activation_email')
+        )
+
+    if request.path in build_no_warning_urls():
+        session['_skip_verified_warning'] = True
+
+
+    redirect_target = get_redirect_target(session.pop('_redirect_target', ()))
     if redirect_target is not None:
         session['_redirect_target'] = redirect_target
-    return response
 
+
+@request_finished.connect_via(app)
+def on_request_finished(app, response):
+    if request.path.startswith(app.static_path):
+        return
+
+    if response.status_code not in range(300+1, 307+1):
+        skip_verified_warning = session.pop('_skip_verified_warning', None)
+        if skip_verified_warning:
+            app.save_session(session, response)
 
 #@app.before_request
 #def before_request():
