@@ -59,12 +59,14 @@ class EMailManager(ComponentBase):
             # File does not exist
             pass
         except Exception, err:
-            raise
+            log.exception(err)
 
         try:
             os.unlink(self.unsent_emails_pickle)
-        except IOError, err:
-            print err
+        except OSError:
+            pass
+        except Exception, err:
+            log.exception(err)
 
     def save_unsent_messages(self):
         unsent_messages = []
