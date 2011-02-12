@@ -8,18 +8,18 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from eventlet.hubs import use_hub, get_hub
-import eventlet
-import time
-eventlet.patcher.monkey_patch(all=False, thread=True, socket=True)
-
+from eventlet.hubs import use_hub
 use_hub('zeromq')
+
+import eventlet
+eventlet.patcher.monkey_patch(all=True)
+time = eventlet.patcher.original('time')
+
 from eventlet import debug, wsgi
-#debug.hub_blocking_detection(True, 0.5)
-debug.hub_blocking_detection(True, 1)
+debug.hub_blocking_detection(True, 0.5)
+#debug.hub_blocking_detection(True, 1)
 
 import logging
-from giblets import ComponentManager
 from ilog.common.daemonbase import BaseDaemon, BaseOptionParser
 
 class FilelikeLogger(object):
@@ -77,7 +77,7 @@ class Daemon(BaseDaemon):
         def start_serving():
             wsgi.server(
                 eventlet.listen((self.serve_host, self.serve_port)),
-                app.wsgi_app,
+                app,
                 log=FilelikeLogger(),
                 log_format=FilelikeLogger.LOG_FORMAT
             )
@@ -86,12 +86,12 @@ class Daemon(BaseDaemon):
             import werkzeug.serving
             start_serving = werkzeug.serving.run_with_reloader(start_serving)
 
-        eventlet.spawn(start_serving)
+        eventlet.spawn_n(start_serving)
         running.send(self)
 
 
         while True:
-            eventlet.sleep(1)
+            eventlet.sleep(10)
 
     def exit(self):
         self.exited = False
@@ -108,7 +108,7 @@ class Daemon(BaseDaemon):
         while not self.exited:
             # Waiting for everyhting to finish up...
             pass
-        time.sleep(0.4)
+#        time.sleep(0.4)
 
 def start_daemon():
     return Daemon.cli()
