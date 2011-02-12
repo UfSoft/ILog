@@ -65,6 +65,9 @@ class AccountQuery(orm.Query):
     def by_provider(self, identifier):
         return getattr(AccountProvider.query.get(identifier), 'account', None)
 
+    def by_username(self, username):
+        return self.filter(Account.username==username).first()
+
 
 class Account(dbm.Model):
 

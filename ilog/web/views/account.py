@@ -43,7 +43,14 @@ def signin():
     app_domain = config.get('JANRAIN_APP_DOMAIN', None)
 
     if form.validate_on_submit():
-        pass
+        account = Account.query.by_username(request.values.get('username', ''))
+        session['uid'] = account.id
+        session.permanent = request.values.get('remember_me', 'n')=='y'
+        identity_changed.send(app, identity=Identity(account.id, "dbm"))
+        flash(_("Welcome back %(display_name)s!",
+                display_name=account.display_name))
+        return redirect_back("account.profile",
+                             invalid_targets=url_for('account.signin'))
 
     return render_template('account/login.html', token_url=token_url,
                            app_domain=app_domain, form=form)
@@ -51,7 +58,7 @@ def signin():
 @account.route('/signout')
 @authenticated_permission.require(403)
 def signout():
-    del session['uid']
+    session.clear()
     identity_changed.send(app, identity=AnonymousIdentity())
     return redirect_back('main.index',
                          invalid_targets=url_for('account.profile'))
@@ -209,6 +216,9 @@ def profile():
             account.locale = locale
         if timezone != account.timezone:
             account.timezone = timezone
+        password = request.values.get('password')
+        if password:
+            account.set_password(password)
         dbm.session.commit()
         flash(_("Account details updated."), "ok")
         return redirect_to('account.profile')
@@ -291,17 +301,17 @@ def register():
         eventlet.spawn_after(1, mail.send, message)
         flash(_("An email has been sent to confirm your email address"))
         return redirect_to('account.profile')
-    else:
-        log.debug("Register form NOT validated")
     return render_template('account/register.html', form=form)
 
 
 @account.route('/activate/<hash>', methods=('GET',))
 def activate(hash):
     activation_key = ActivationKey.query.get(hash)
-    if not hash:
+    if not activation_key:
         flash(_("Activation Key Not Known. Plobably Expired"))
-        return redirect_to('account.signin')
+        if g.identity.account:
+            return redirect_back('account.profile')
+        return redirect_back('account.signin')
 
     activation_key.email.verified = True
     activation_key.email.account.confirmed = True
@@ -347,4 +357,5 @@ def resend_activation_email():
 
     for message in messages:
         eventlet.spawn_after(1, mail.send, message)
+
     return redirect_back('account.profile')

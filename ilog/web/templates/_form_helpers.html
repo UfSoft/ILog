@@ -2,12 +2,13 @@
 {% macro render_field(field, options={}, show_description=True) %}
   <fieldset class="ui-corner-all">
   <legend>{% if field.label %}<label for="{{ field.id }}">{{ field.label }}</label>{% endif %}</legend>
-  {% if field.description and show_description %}
-    <span class="help">{{ field.description }}</span><br/>
-  {% endif %}
   {{ field(class_=' '.join([options.pop('class_', ''), options.pop('class', ''), (field.errors and 'error' or '')]).strip(), **options) }}
   {% if field.errors %}
     <span class="error">{% for error in field.errors -%}{{ error }}&nbsp;{% endfor %}</span>
+  {% endif %}
+  {% if field.description and show_description %}
+    {% if field.widget.input_type != 'checkbox' %}<br/>{% endif -%}
+    <span class="help">{{ field.description }}</span>
   {% endif %}
   </fieldset>
 {% endmacro %}
@@ -15,10 +16,11 @@
 {% macro render_disabled_input(field, options={}, show_description=True) %}
   <fieldset class="ui-corner-all">
   <legend>{% if field.label %}<label for="{{ field.id }}">{{ field.label }}</label>{% endif %}</legend>
-  {% if field.description %}
-    <span class="help">{{ field.description }}</span><br/>
-  {% endif %}
   <input size="20" name="{{ field.id }}" value="{{ field._value() }}" disabled="disabled"/>
+  {% if field.description %}
+    {% if field.widget.input_type != 'checkbox' %}<br/>{% endif -%}
+    <span class="help">{{ field.description }}</span>
+  {% endif %}
   {% if field.errors %}
     <span class="error">{% for error in field.errors -%}{{ error }}&nbsp;{% endfor %}</span>
   {% endif %}

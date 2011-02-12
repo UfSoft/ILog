@@ -28,6 +28,21 @@
       </a>
     {%- endif %}
   </fieldset>
+  <fieldset class="ui-corner-all">
+    <legend>{{ form.password.label }}</legend>
+    {{ form.password(class_=(form.password.errors and 'error' or ''), size=20) }}
+    {% if form.password.errors %}
+    <span class="error">{% for error in form.password.errors -%}{{ error }}&nbsp;{% endfor %}</span>
+    {% endif %}
+    {% if form.password.description %}
+    <br/><span class="help">{{ form.password.description }}</span>
+    {% endif %}<br/>
+    {{ form.password_confirm(class_=(form.password_confirm.errors and 'error' or ''), size=20) }}{% if form.password_confirm.errors %}
+    <span class="error">{% for error in form.password_confirm.errors -%}{{ error }}&nbsp;{% endfor %}</span>
+    {% endif %}
+    <br/><span class="help">{{ form.password_confirm.label }}</span>
+
+  </fieldset>
 {% endblock %}
 {% block form_actions %}
   <input class="ui-button" type="submit" value="{{ _('Update') }}">

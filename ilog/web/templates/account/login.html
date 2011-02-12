@@ -9,6 +9,7 @@
         {{ form.hidden_tag() }}
         {{ render_field(form.username, {'size': 20}) }}
         {{ render_field(form.password, {'size': 20}) }}
+        {{ render_field(form.remember_me, {'size': 20}) }}
   {% if app_domain -%}
       </td>
       <td width="400">

@@ -72,6 +72,19 @@ class LoginForm(FormBase):
                             description=_("Your username"))
     password    = PasswordField(_("Password"), validators=[Required()],
                                 description=_("Your password"))
+    remember_me = BooleanField(_("Remember Me"), description=_(
+                                "Keep me signed-in for future visits."))
+
+    def validate_username(self, field):
+        account = Account.query.by_username(username=field.data)
+        if not account:
+            raise ValidationError(_("The account \"%(account)s\" is not known.",
+                                    account=field.data))
+
+    def validate_password(self, field):
+        account = Account.query.by_username(username=self.data['username'])
+        if account and not account.check_password(field.data):
+            raise ValidationError(_("Password does not match."))
 
 class RegisterForm(FormBase):
     title            = _("Please Register")
@@ -145,6 +158,13 @@ class ProfileForm(_UserBoundForm):
         widget=select_multi_checkbox,
         description=_("Unselected checkboxes will remove those providers from "
                       "your account"))
+
+    password         = PasswordField(_("Password"), description=_(
+                        "Please provide a password if you wish to sign-in "
+                        "directly on %(app)s, ie, not using an account "
+                        "provider", app='ILog'))
+    password_confirm = PasswordField(_("Confirm Password"), validators=[
+                        EqualTo('password', _("Passwords do not match"))])
 
     def __init__(self, db_entry=None, formdata=None, *args, **kwargs):
         super(ProfileForm, self).__init__(db_entry, formdata, *args, **kwargs)
