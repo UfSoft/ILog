@@ -17,3 +17,7 @@ Emitted once the web application has been fully configured.
 webapp_shutdown = signal("webapp-shutdown", """\
 Emitted once the web application has been fully configured.
 """)
+
+ctxnav_build = signal("ctxnav-build", """\
+Emitted in order to get ctxnav contents
+""")
