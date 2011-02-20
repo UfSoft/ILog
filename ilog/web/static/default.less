@@ -48,10 +48,11 @@ body {
   .initial_html_and_body;
 }
 
-a, a:visited, .ui-widget-header a, .ui-widget-header a:visited {
+a, a:visited, .ui-widget-content a, .ui-widget-header a, .ui-widget-header a:visited {
   text-decoration: none;
   color: #555;
 }
+
 a:hover, .ui-state-default a:hover {
   color: #5f91ae;
 }
@@ -99,8 +100,7 @@ a:hover, .ui-state-default a:hover {
 
   span.name {
     font-family: "V5 Prophit Black";
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 26px;
     text-shadow: 2px 2px 3px #777;
     color: #444;
     letter-spacing: 2px;
@@ -166,6 +166,10 @@ a:hover, .ui-state-default a:hover {
   a.ui-state-active { font-family: "Gputeks Bold"; }
   .ui-widget { font-size: 13px; font-family: "Gputeks Regular"; }
   .ui-button-text-only .ui-button-text { padding: 0.3em 0.7em; }
+  a.active {
+    background: url("ext/smoothess/images/ui-bg_glass_65_ffffff_1x400.png") repeat-x scroll 50% 50% #FFFFFF;
+    border: 1px solid #AAA;
+  }
 }
 
 div.flash-message {
@@ -263,7 +267,7 @@ div.flash-message {
     }
 
     input.error {
-      border-color: #e82828;
+      border-color: #ff0000;
     }
 
     p.description {
@@ -277,7 +281,7 @@ div.flash-message {
     }
 
     span.error {
-      color: #e82828;
+      color: #ff0000;
       padding-top: 2px;
       font-size: 14px;
       vertical-align: middle;
@@ -306,6 +310,11 @@ div.flash-message {
         font-family: "Gputeks Bold";
         padding: 0.1em 0.3em;
         color: #444;
+      }
+
+      .ui-button.sensible {
+        color: #ff0000;
+        text-shadow: 1px 1px 1px #AAAAAA;
       }
     }
   }
