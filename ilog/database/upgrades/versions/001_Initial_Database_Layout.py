@@ -181,6 +181,21 @@ class Channel(Model):
                          cascade="all, delete, delete-orphan")
 
 
+class IRCEventType(Model):
+    __tablename__ = 'irc_event_types'
+    type          = dbm.Column(dbm.String(30), primary_key=True)
+
+
+class IRCEvent(Model):
+    __tablename__ = 'irc_events'
+    id            = dbm.Column(dbm.Integer, primary_key=True)
+    type_id       = dbm.Column(dbm.ForeignKey('irc_event_types.type'))
+    channel_id    = dbm.Column(dbm.ForeignKey('channels.id'))
+    stamp         = dbm.Column(dbm.DateTime, default=datetime.utcnow)
+    raw_message   = dbm.Column(dbm.String(30))
+    clean_message = dbm.Column(dbm.String(30))
+    message       = dbm.Column(dbm.String(30))
+
 
 def upgrade(migrate_engine):
     # Upgrade operations go here. Don't create your own engine; use the engine

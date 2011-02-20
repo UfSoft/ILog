@@ -299,4 +299,22 @@ class Channel(dbm.Model):
         self.prefix = prefix
         self.key = key
 
+class IRCEventType(dbm.Model):
+    __tablename__ = 'irc_event_types'
+    type          = dbm.Column(dbm.String(30), primary_key=True)
 
+    def __init__(self, type):
+        self.type = type
+
+class IRCEvent(dbm.Model):
+    __tablename__ = 'irc_events'
+    id            = dbm.Column(dbm.Integer, primary_key=True)
+    type_id       = dbm.Column(dbm.ForeignKey('irc_event_types.type'))
+    channel_id    = dbm.Column(dbm.ForeignKey('channels.id'))
+    stamp         = dbm.Column(dbm.DateTime, default=datetime.utcnow)
+    raw_message   = dbm.Column(dbm.String(30))
+    clean_message = dbm.Column(dbm.String(30))
+    message       = dbm.Column(dbm.String(30))
+
+    def __init__(self):
+        pass
