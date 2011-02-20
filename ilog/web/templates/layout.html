@@ -26,7 +26,7 @@
             <img width="22" height="22" alt="" src="{{ profile_photo.url }}">
           </li>
           {%- endif %}
-          {% for url, name, class in ctxnav %}
+          {% for url, name, class in account_nav %}
             <li{% if class %} class="{{class}}"{% endif %}>
               <a href="{{ url }}">{{ name }}</a>
             </li>
@@ -35,13 +35,17 @@
       </div>
       <div id="header-logo">
         <span class="name">IRC Logging Network</span><br/>
-        <span class="counter">So Far We Have Logged <span id="counter">0</span> Events</span>
+        <span class="counter">So Far We Have Logged<span id="counter">
+          {{ total_events_logged }}
+        </span>Events</span>
       </div>
+      {% if ctxnav -%}
       <div id="ctx-nav" class="ui-widget-header ui-corner-all">
-        <a class="ui-button-text active" href="{{ url_for('main.index') }}">Home</a>
-        <a class="ui-button-text" href="{{ url_for('account.signin') }}">Networks</a>
-        <a class="ui-button-text" href="{{ url_for('account.register') }}">Channels</a>
+        {% for url, name, class in ctxnav %}
+        <a href="{{ url }}" class="{{ class }}">{{ name }}</a>
+        {% endfor %}
       </div>
+      {%- endif %}
 
       <div id="body-wrapper">
         {% for category, message in get_flashed_messages(True) %}
@@ -58,7 +62,6 @@
       </div>
     </div>
     <script type="text/javascript">
-      //$("#navigation").corner('round bl 8px');
       $('#ctx-nav').buttonset();
     </script>
     {% block footer %}{% endblock %}
