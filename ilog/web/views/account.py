@@ -22,15 +22,20 @@ from ilog.web.application import app, config, redirect_to, redirect_back
 from ilog.web.forms import LoginForm, RegisterForm, ProfileForm, ExtraEmailForm
 from ilog.web.mail import mail, Message
 from ilog.web.permissions import authenticated_permission
+from ilog.web.signals import ctxnav_build
 
 log = logging.getLogger(__name__)
 
 account = Module(__name__, name="account", url_prefix='/account')
 
+@ctxnav_build.connect_via(account)
+def on_account_ctxnav_build(emitter):
+    return (
+        # prio, endpoint, name, partial also macthes
+        (10, 'account.profile', _("My Profile"), False),
+        (10, 'account.photos', _("Profile Photos"), False),
+    )
 
-#@account.app_context_processor
-#def build_ctx_nav():
-#    pass
 
 @account.route('/signin', methods=("GET", "POST"))
 def signin():
@@ -207,6 +212,9 @@ def profile_extra_email():
 @account.route('/profile', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def profile():
+    if 'delete_account' in request.values:
+        return redirect_to('account.delete_account')
+
     account = Account.query.get(g.identity.account.id)
     form = ProfileForm(account)
     if form.validate_on_submit():
@@ -359,3 +367,13 @@ def resend_activation_email():
         eventlet.spawn_after(1, mail.send, message)
 
     return redirect_back('account.profile')
+
+@account.route('/delete-account', methods=('GET', 'POST'))
+@authenticated_permission.require(401)
+def delete_account():
+    raise NotImplementedError()
+
+@account.route('/photos', methods=('GET', 'POST'))
+@authenticated_permission.require(401)
+def photos():
+    raise NotImplementedError()
