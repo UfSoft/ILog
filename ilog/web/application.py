@@ -26,7 +26,7 @@ from flaskext.babel import Babel, gettext as _
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm
 from ilog.web import defaults
-from .signals import webapp_setup_complete, webapp_shutdown
+from .signals import webapp_setup_complete, webapp_shutdown, ctxnav_build
 from .mail import mail
 
 log = logging.getLogger(__name__)
@@ -89,16 +89,23 @@ class Application(Flask):
         # Setup views
         from .views.main import main
         from .views.account import account
+        from .views.admin import admin
+        from .views.admin.accounts import accounts
         self.register_module(main)
         self.register_module(account)
+        self.register_module(admin)
+        self.register_module(accounts)
+
 
         # WebApp setup is complete. Signal it.
         webapp_setup_complete.send(self)
 
     def shutdown(self):
         log.info("ILog web Application shut down")
-        webapp_shutdown.send(self, _waitall=True)
-        shutdown.send(self, _waitall=True)
+#        webapp_shutdown.send(self, _waitall=True)
+#        shutdown.send(self, _waitall=True)
+        webapp_shutdown.send(self)
+        shutdown.send(self)
 
 
 
@@ -195,19 +202,55 @@ def on_401(error):
 
 # Account Navigation building
 @app.context_processor
-def build_account_nav():
+def process_context():
     from .permissions import admin_permission
-    ctxnav = []
-    if not g.identity.account:
-        ctxnav.append((url_for('account.signin'), _("Sign-In"), "first"))
-        ctxnav.append((url_for('account.register'), _("Register"), None))
+    account_nav = []
+    if g.identity.account is None:
+        profile_photo = None
+        account_nav.append((url_for('account.signin'), _("Sign-In"), "first"))
+        account_nav.append((url_for('account.register'), _("Register"), None))
     else:
-        ctxnav.append((url_for('account.signout'), _("Sign-Out"), "first"))
-        ctxnav.append((url_for('account.profile'), _("My Profile"), None))
+        account_nav.append((url_for('account.signout'), _("Sign-Out"), "first"))
+        account_nav.append((url_for('account.profile'), _("My Profile"), None))
+
+        if not g.identity.account.confirmed and not \
+                                session.get('_skip_verified_warning', False):
+            message = Markup("You're account is not yet verified! "
+                             "<a href=\"%s\">Resend confirmation email</a>." %
+                             url_for('account.resend_activation_email'))
+            flash(message, "error")
+
+        profile_photo = g.identity.account.profile_photos.filter_by(
+                                                        preferred=True).first()
 
     if g.identity.can(admin_permission):
-        ctxnav.append((url_for('account.signin'), _("Administration"), None))
-    return dict(ctxnav=tuple(ctxnav))
+        account_nav.append(
+            (url_for('admin.dashboard'), _("Administration"), None)
+        )
+
+    @cache.memoize(3600)
+    def construct_ctxnav(module=None, identity_name="anon", url_path=None):
+        participant_results = []
+        for participant, nav_entry in ctxnav_build.send(module):
+            if isinstance(nav_entry, eventlet.greenthread.GreenThread):
+                nav_entry = nav_entry.wait()
+            for prio, endpoint, name, partial in nav_entry:
+                participant_results.append((prio, name, endpoint, partial))
+        for (prio, name, endpoint, partial) in sorted(participant_results):
+            url = url_for(endpoint)
+            if request.path==url or (partial and request.path.startswith(url)):
+                yield url, name, "active"
+            else:
+                yield url, name, "inactive"
+
+    return dict(
+        account_nav=tuple(account_nav),
+        profile_photo=profile_photo,
+        request_path=request.path,
+        ctxnav=construct_ctxnav(
+            app.modules[request.module], g.identity.name, request.path
+        ),
+    )
 
 @app.context_processor
 def account_related_actions():
@@ -226,12 +269,20 @@ def account_related_actions():
 
     return dict(profile_photo=profile_photo)
 
+@app.context_processor
+def get_total_events():
+    @cache.cached(timeout=10, key_prefix='total_irc_events')
+    def get_total_events_from_db():
+        from ilog.database.models import IRCEvent
+        return IRCEvent.query.count()
+    return dict(total_events_logged=get_total_events_from_db())
+
 @request_started.connect_via(app)
 def on_request_started(app):
     if request.path.startswith(app.static_path):
         return
 
-    @cache.memoize(3600)
+    @cache.cached(timeout=3600, key_prefix='no_warning_urls')
     def build_no_warning_urls():
         return (
             url_for('account.register'),
