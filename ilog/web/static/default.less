@@ -48,9 +48,10 @@ body {
   .initial_html_and_body;
 }
 
+
 a, a:visited, .ui-widget-content a, .ui-widget-header a, .ui-widget-header a:visited {
   text-decoration: none;
-  color: #555;
+  color: #000;
 }
 
 a:hover, .ui-state-default a:hover {
@@ -87,7 +88,7 @@ a:hover, .ui-state-default a:hover {
     letter-spacing: 1px;
     font-weight: normal;
     width: 96%;
-    margin-top: -2px;
+    margin-top: -1px;
     margin-left: auto;
     margin-right: auto;
     border-bottom: none;
@@ -124,7 +125,13 @@ a:hover, .ui-state-default a:hover {
   position: absolute;
   right: 15px;
   top: -5px;
+  font-size: 11px;
   padding: 1px 5px 3px 5px;
+  text-shadow: 1px 1px 1px #666;
+
+  a, a:visited {
+    color: #000;
+  }
 
   ul {
     display: inline;
@@ -155,21 +162,38 @@ a:hover, .ui-state-default a:hover {
   }
 }
 
-/*#ctx-nav.ui-buttonset { margin-right: 0px; }*/
-#ctx-nav.ui-buttonset .ui-button { margin-right: -0.7em; }
 
-#ctx-nav {
-  margin: 10px 5px 10px 5px;
+#nav.ui-buttonset .ui-button, #ctxnav.ui-buttonset .ui-button {
+  margin-right: -0.7em;
+  text-shadow: 1px 1px 1px #444;
+}
+
+.navigation_items {
   padding: 3px 4px;
   text-shadow: 1px 1px 1px #999999;
+  a, a:visited { text-decoration: none; color: #000; }
 
-  a.ui-state-active { font-family: "Gputeks Bold"; }
-  .ui-widget { font-size: 13px; font-family: "Gputeks Regular"; }
+  /*a.ui-state-active { font-family: "Gputeks Bold"; }*/
+  .ui-widget { font-family: "Gputeks Regular"; }
   .ui-button-text-only .ui-button-text { padding: 0.3em 0.7em; }
-  a.active {
-    background: url("ext/smoothess/images/ui-bg_glass_65_ffffff_1x400.png") repeat-x scroll 50% 50% #FFFFFF;
+  /*a.active {
+    /*background: url("ext/smoothness/images/ui-bg_glass_65_ffffff_1x400.png") repeat-x scroll 50% 50% #FFFFFF;
     border: 1px solid #AAA;
-  }
+  }*/
+
+}
+
+#nav {
+  .navigation_items;
+  margin: 10px 5px 0px 5px;
+  .ui-widget { font-size: 12px; }
+}
+
+#ctxnav {
+  .navigation_items;
+  margin: -1px 5px 10px 15px;
+  padding: 0 4px 3px 4px;
+  .ui-widget { font-size: 11px; border-top: 1px solid #AAA; }
 }
 
 div.flash-message {
@@ -320,3 +344,19 @@ div.flash-message {
   }
 }
 
+div.pagination {
+  text-align: center;
+  /*padding: 5px 0 5px 0;
+  text-align: center;
+  strong, a {
+    margin: 0 2px;
+    padding: 2px 4px 2px 4px;
+    text-decoration: none;
+  }
+  a:hover {
+    background-color: #FFFDFC;
+  }*/
+  span.ellipsis {
+    padding: 2px 4px 2px 4px;
+  }
+}
