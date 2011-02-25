@@ -143,9 +143,11 @@ group_privileges = dbm.Table('group_privileges', metadata,
 class Network(Model):
     __tablename__ = 'networks'
     id            = dbm.Column(dbm.Integer, primary_key=True)
+    slug          = dbm.Column(dbm.String(10), unique=True, index=True)
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
+    created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
 
 class Identity(Model):
@@ -171,14 +173,19 @@ class Channel(Model):
     __tablename__ = 'channels'
     id            = dbm.Column(dbm.Integer, primary_key=True)
     network_id    = dbm.Column(dbm.ForeignKey('networks.id'), default=None)
+    slug          = dbm.Column(dbm.String(10), unique=True, index=True)
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
+    created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
     # Relations
-    topic = dbm.relation("TopicChange", backref="channel", single_parent=True,
-                         cascade="all, delete, delete-orphan")
+    topic         = dbm.relation("TopicChange", backref="channel",
+                                 single_parent=True,
+                                 cascade="all, delete, delete-orphan")
+    created_by    = dbm.relation("Account", backref="channels", lazy=True,
+                                 cascade='all, delete')
 
 
 class IRCEventType(Model):

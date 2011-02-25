@@ -9,6 +9,7 @@
 """
 
 import logging
+import unicodedata
 from datetime import datetime, timedelta
 from hashlib import md5, sha1
 from time import time
@@ -20,6 +21,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from ilog.database import dbm
 
 log = logging.getLogger(__name__)
+
+def gen_slug(name):
+    return '-'.join(
+        unicodedata.normalize('NFKD', name).encode('ascii','ignore').split()
+    ).lower()
 
 class SchemaVersion(dbm.Model):
     """SQLAlchemy-Migrate schema version control table."""
@@ -210,6 +216,12 @@ account_privileges = dbm.Table('account_privileges', dbm.metadata,
     dbm.Column('privilege_id', dbm.ForeignKey('privileges.id'))
 )
 
+class GroupQuery(orm.Query):
+
+    def get(self, privilege):
+        if isinstance(privilege, basestring):
+            return self.filter(Group.name==privilege).first()
+        return orm.Query.get(privilege)
 
 class Group(dbm.Model):
     __tablename__ = 'groups'
@@ -218,11 +230,15 @@ class Group(dbm.Model):
     name          = dbm.Column(dbm.String(30))
 
     accounts      = dbm.dynamic_loader("Account", secondary="group_accounts",
-                                       backref=dbm.backref("groups", lazy=True),
-                                       query_class=AccountQuery)
+                        backref=dbm.backref("groups", lazy=True,
+                                            collection_class=set),
+                        query_class=AccountQuery)
     privileges    = dbm.relation("Privilege", secondary="group_privileges",
                                  backref="priveliged_groups", lazy=True,
                                  collection_class=set, cascade='all, delete')
+
+    query_class   = GroupQuery
+
 
     def __init__(self, group_name):
         self.name = group_name
@@ -244,11 +260,21 @@ group_privileges = dbm.Table('group_privileges', dbm.metadata,
 class Network(dbm.Model):
     __tablename__ = 'networks'
     id            = dbm.Column(dbm.Integer, primary_key=True)
+    slug          = dbm.Column(dbm.String(10), unique=True, index=True)
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
+    created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
-    def __init__(self, name, host, port=6667):
+    created_by    = dbm.relation("Account", backref="networks", lazy=True,
+                                 cascade='all, delete')
+    channels      = dbm.dynamic_loader("Channel", backref="network",
+                                       cascade='all, delete, delete-orphan')
+
+    def __init__(self, name, host, port=6667, slug=None):
+        if not slug:
+            slug = gen_slug(name)
+        self.slug = slug
         self.name = name
         self.host = host
         self.port = port
@@ -282,19 +308,27 @@ class Channel(dbm.Model):
     __tablename__ = 'channels'
     id            = dbm.Column(dbm.Integer, primary_key=True)
     network_id    = dbm.Column(dbm.ForeignKey('networks.id'), default=None)
+    slug          = dbm.Column(dbm.String(10), unique=True, index=True)
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
+    created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
     # Relations
-    topic = dbm.relation("TopicChange", backref="channel", single_parent=True,
-                        cascade="all, delete, delete-orphan")
+    topic         = dbm.relation("TopicChange", backref="channel",
+                                 single_parent=True,
+                                 cascade="all, delete, delete-orphan")
+    created_by    = dbm.relation("Account", backref="channels", lazy=True,
+                                 cascade='all, delete')
 
-    def __init__(self, name, prefix=None, key=None):
+    def __init__(self, name, slug=None, prefix=None, key=None):
         if not prefix and name[0] in "#&":
             prefix = name[0]
             name = name[1:]
+        if not slug:
+            slug = gen_slug(name)
+        self.slug = slug
         self.name = name
         self.prefix = prefix
         self.key = key
