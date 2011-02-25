@@ -8,19 +8,31 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Module, request, url_for, render_template
+from flask import Module, request, url_for, render_template, g
 from flaskext.babel import gettext as _
-from ilog.web.signals import ctxnav_build
+from ilog.web.permissions import admin_permission, admin_or_manager_permission
+from ilog.web.signals import ctxnav_build, nav_build
 
 admin = Module(__name__, name="admin", url_prefix="/admin")
 
-@ctxnav_build.connect_via(admin)
-def on_admin_ctxnav_build(emitter):
-    return (
-        # prio, endpoint, name, partial also macthes
-        (1, 'admin.dashboard', _("Dashboard"), False),
-        (2, 'admin.account.index', _("Accounts"), False)
-    )
+@nav_build.connect
+def on_admin_nav_build(emitter):
+    navigation = []
+    if not request.path.startswith('/admin') or not \
+                                    g.identity.can(admin_or_manager_permission):
+        return navigation
+
+    if g.identity.can(admin_permission):
+        navigation.extend([
+            (1, 'admin.dashboard', _("Dashboard"), False),
+            (2, 'admin.accounts.index', _("Accounts"), True)
+        ])
+
+    navigation.extend([
+        (3, 'admin.networks.index', _("Networks"), True),
+        (4, 'admin.channels.index', _("Channels"), True)
+    ])
+    return navigation
 
 @admin.route('/')
 @admin.route('/dashboard')

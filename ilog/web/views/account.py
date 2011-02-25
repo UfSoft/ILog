@@ -19,17 +19,18 @@ from ilog.database import dbm
 from ilog.database.models import (Account, AccountProvider, EMailAddress,
                                   ActivationKey, ProfilePhoto)
 from ilog.web.application import app, config, redirect_to, redirect_back
-from ilog.web.forms import LoginForm, RegisterForm, ProfileForm, ExtraEmailForm
+from ilog.web.forms import (DeleteAccountForm, LoginForm, RegisterForm,
+                            ProfileForm, ExtraEmailForm)
 from ilog.web.mail import mail, Message
 from ilog.web.permissions import authenticated_permission
-from ilog.web.signals import ctxnav_build
+from ilog.web.signals import ctxnav_build, nav_build
 
 log = logging.getLogger(__name__)
 
 account = Module(__name__, name="account", url_prefix='/account')
 
-@ctxnav_build.connect_via(account)
-def on_account_ctxnav_build(emitter):
+@nav_build.connect_via(account)
+def on_account_nav_build(emitter):
     return (
         # prio, endpoint, name, partial also macthes
         (10, 'account.profile', _("My Profile"), False),
@@ -371,7 +372,21 @@ def resend_activation_email():
 @account.route('/delete-account', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def delete_account():
-    raise NotImplementedError()
+    if 'cancel' in request.values:
+        return redirect_back('account.profile')
+
+    account = Account.query.get(g.identity.account.id)
+
+    form = DeleteAccountForm(account, request.values.copy())
+
+    if form.validate_on_submit():
+        dbm.session.delete(account)
+        dbm.session.commit()
+        session.clear()
+        identity_changed.send(app, identity=AnonymousIdentity())
+        return redirect_to("main.index")
+
+    return render_template('account/delete.html', form=form)
 
 @account.route('/photos', methods=('GET', 'POST'))
 @authenticated_permission.require(401)

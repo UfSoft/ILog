@@ -16,7 +16,7 @@ eventlet.patcher.monkey_patch(all=True)
 time = eventlet.patcher.original('time')
 eventlet.import_patched('smtplib')
 from eventlet import debug, wsgi
-debug.hub_blocking_detection(True, 1)
+#debug.hub_blocking_detection(True, 1)
 
 import logging
 from ilog.common.daemonbase import BaseDaemon, BaseOptionParser

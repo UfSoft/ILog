@@ -27,8 +27,18 @@ Identity.__repr__ = lambda x: """\
 principal = Principal(app, use_sessions=False, skip_static=True)
 
 anonymous_permission = Permission()
-admin_permission = Permission(RoleNeed('administrator'))
-manager_permission = Permission(RoleNeed('manager'))
+
+admin_role = RoleNeed('administrator')
+manager_role = RoleNeed('manager')
+
+manager_permission = Permission(manager_role)
+admin_permission = Permission(admin_role)
+
+admin_or_manager_permission = Permission(admin_role, manager_role)
+#admin_permission = manager_permission.union(Permission(RoleNeed('administrator')))
+#admin_permission = Permission(RoleNeed('administrator'), RoleNeed('manager'))
+#print 789, admin_permission.needs
+
 authenticated_permission = Permission(TypeNeed('authenticated'))
 
 @principal.identity_loader
@@ -77,7 +87,7 @@ def on_identity_loaded(sender, identity):
             identity.provides.add(TypeNeed('authenticated'))
             # Update the privileges that a user has
             for privilege in account.privileges:
-                identity.provides.add(ItemNeed(privilege.name))
+                identity.provides.add(ActionNeed(privilege.name))
             for group in account.groups:
                 # And for each of the groups the user belongs to
                 for privilege in group.privileges:

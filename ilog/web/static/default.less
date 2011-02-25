@@ -51,7 +51,6 @@ body {
 
 a, a:visited, .ui-widget-content a, .ui-widget-header a, .ui-widget-header a:visited {
   text-decoration: none;
-  color: #000;
 }
 
 a:hover, .ui-state-default a:hover {
@@ -123,11 +122,15 @@ a:hover, .ui-state-default a:hover {
 #account-nav {
   float: right;
   position: absolute;
-  right: 15px;
+  height: 25px;
+  right: 70px;
   top: -5px;
   font-size: 11px;
   padding: 1px 5px 3px 5px;
   text-shadow: 1px 1px 1px #666;
+  -moz-box-shadow: 3px 3px 10px #888888;
+  -webkit-box-shadow: 3px 3px 10px #888888;
+  box-shadow: 3px 3px 10px #888888;
 
   a, a:visited {
     color: #000;
@@ -171,29 +174,36 @@ a:hover, .ui-state-default a:hover {
 .navigation_items {
   padding: 3px 4px;
   text-shadow: 1px 1px 1px #999999;
-  a, a:visited { text-decoration: none; color: #000; }
 
-  /*a.ui-state-active { font-family: "Gputeks Bold"; }*/
   .ui-widget { font-family: "Gputeks Regular"; }
   .ui-button-text-only .ui-button-text { padding: 0.3em 0.7em; }
-  /*a.active {
-    /*background: url("ext/smoothness/images/ui-bg_glass_65_ffffff_1x400.png") repeat-x scroll 50% 50% #FFFFFF;
-    border: 1px solid #AAA;
-  }*/
 
+}
+
+.drop-shadow {
+  -moz-box-shadow: 1px 6px 10px #888888;
+  -webkit-box-shadow: 1px 6px 10px #888888;
+  box-shadow: 1px 6px 10px #888888;
 }
 
 #nav {
   .navigation_items;
-  margin: 10px 5px 0px 5px;
+  margin: 10px 15px 0 10px;
   .ui-widget { font-size: 12px; }
+
+  -moz-box-shadow: 1px 6px 10px #888888;
+  -webkit-box-shadow: 1px 6px 10px #888888;
+  box-shadow: 1px 6px 10px #888888;
 }
 
 #ctxnav {
   .navigation_items;
-  margin: -1px 5px 10px 15px;
+  margin: 0px 5px 10px 30px;
   padding: 0 4px 3px 4px;
   .ui-widget { font-size: 11px; border-top: 1px solid #AAA; }
+  a, a:visited {
+    .drop-shadow;
+  }
 }
 
 div.flash-message {
@@ -225,7 +235,8 @@ div.flash-message {
 
 #content {
   font-family: "Gputeks Regular";
-  margin-top: 10px;
+  margin-top: 6px;
+  padding: 4px 2px;
 
   form {
 
@@ -358,5 +369,23 @@ div.pagination {
   }*/
   span.ellipsis {
     padding: 2px 4px 2px 4px;
+  }
+}
+
+table.listing {
+  padding: 0 10px;
+  width: 100%;
+
+  td, th {
+    vertical-align: middle;
+    padding: 2px 5px;
+  }
+  tr.even { background: url("ext/redmond/images/ui-bg_inset-hard_100_f5f8f9_1x100.png") repeat-x scroll 50% 0% #F5F8F9; }
+
+  th.actions { width: 1%; }
+  td.actions {
+    padding: 0px 6px;
+    white-space: nowrap;
+    a { padding: 7px 0px; }
   }
 }

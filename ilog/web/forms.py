@@ -111,10 +111,10 @@ class RegisterForm(FormBase):
                                     "in use. Please choose another one.",
                                     username=field.data))
 
-class _UserBoundForm(FormBase):
+class _DBBoundForm(FormBase):
     def __init__(self, db_entry=None, formdata=None, *args, **kwargs):
         self.db_entry = db_entry
-        super(_UserBoundForm, self).__init__(formdata, *args, **kwargs)
+        super(_DBBoundForm, self).__init__(formdata, *args, **kwargs)
 
     def process(self, formdata=None, *args, **kwargs):
         fields = {}
@@ -123,7 +123,7 @@ class _UserBoundForm(FormBase):
             if value:
                 fields[name] = value
         fields.update(kwargs)
-        super(_UserBoundForm, self).process(formdata, *args, **fields)
+        super(_DBBoundForm, self).process(formdata, *args, **fields)
 
 def select_multi_checkbox(field, ul_class='multi-checkbox', **kwargs):
     from wtforms.widgets import html_params
@@ -143,7 +143,7 @@ def select_multi_checkbox(field, ul_class='multi-checkbox', **kwargs):
     html.append(u'</ul>')
     return Markup(u''.join(html))
 
-class ProfileForm(_UserBoundForm):
+class ProfileForm(_DBBoundForm):
     title           = _("My Profile")
     id              = HiddenField(validators=[Required()])
     username        = HiddenField(_("Username"), validators=[Required()])
@@ -195,3 +195,7 @@ class ProfileForm(_UserBoundForm):
 class ExtraEmailForm(FormBase):
     title           = _("Extra Email Address")
     email_address   = HiddenField(validators=[Required()])
+
+class DeleteAccountForm(_DBBoundForm):
+    title           = _("Delete Account")
+    id              = HiddenField(validators=[Required()])

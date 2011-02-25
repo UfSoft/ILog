@@ -1,0 +1,11 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  <p class="description">{% trans network=form.db_entry.name -%}
+      Are you sure want to delete the IRC network "{{ network }}"?{% endtrans -%}
+  </p>
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" name="cancel" type="submit" value="{{ _('Cancel') }}">
+  <input class="ui-button sensible" name="delete" type="submit" value="{{ _('Delete') }}">
+{% endblock %}

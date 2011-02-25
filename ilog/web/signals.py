@@ -18,6 +18,10 @@ webapp_shutdown = signal("webapp-shutdown", """\
 Emitted once the web application has been fully configured.
 """)
 
+nav_build = signal("nav-build", """\
+Emitted in order to get navigational contents.
+""")
+
 ctxnav_build = signal("ctxnav-build", """\
-Emitted in order to get ctxnav contents
+Emitted in order to get context navigation contents.
 """)

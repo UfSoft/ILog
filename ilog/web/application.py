@@ -26,7 +26,7 @@ from flaskext.babel import Babel, gettext as _
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm
 from ilog.web import defaults
-from .signals import webapp_setup_complete, webapp_shutdown, ctxnav_build
+from .signals import webapp_setup_complete, webapp_shutdown, ctxnav_build, nav_build
 from .mail import mail
 
 log = logging.getLogger(__name__)
@@ -47,6 +47,10 @@ class Application(Flask):
         except ImportError:
             log.info("No \"ilogconfig.py\" found. Using default configuration.")
         self.logger_name = '.'.join([__name__, 'SERVER'])
+
+        theme_name = self.config.get("THEME_NAME", None)
+        if theme_name not in ("redmond", "smoothness"):
+            raise RuntimeError("Theme \"%s\" not supported" % theme_name)
 
         dbm.native_unicode = self.config.get('SQLALCHEMY_NATIVE_UNICODE', True)
         dbm.record_queries = self.config.get('SQLALCHEMY_RECORD_QUERIES', False)
@@ -91,13 +95,17 @@ class Application(Flask):
         from .views.account import account
         from .views.admin import admin
         from .views.admin.accounts import accounts
+        from .views.admin.channels import channels
+        from .views.admin.networks import networks
         self.register_module(main)
         self.register_module(account)
         self.register_module(admin)
         self.register_module(accounts)
-
+        self.register_module(channels)
+        self.register_module(networks)
 
         # WebApp setup is complete. Signal it.
+        eventlet.sleep(0.5)
         webapp_setup_complete.send(self)
 
     def shutdown(self):
@@ -199,11 +207,16 @@ def on_401(error):
     flash(_("You have not signed in yet."), "error")
     return redirect_to('account.signin', code=307)
 
+@app.errorhandler(403)
+def on_403(error):
+    flash(_("You don't the required permissions."), "error")
+    return redirect_to('main.index', code=307)
+
 
 # Account Navigation building
 @app.context_processor
 def process_context():
-    from .permissions import admin_permission
+    from .permissions import admin_permission, admin_or_manager_permission
     account_nav = []
     if g.identity.account is None:
         profile_photo = None
@@ -223,10 +236,27 @@ def process_context():
         profile_photo = g.identity.account.profile_photos.filter_by(
                                                         preferred=True).first()
 
-    if g.identity.can(admin_permission):
+    if g.identity.can(admin_or_manager_permission):
         account_nav.append(
             (url_for('admin.dashboard'), _("Administration"), None)
         )
+
+    @cache.memoize(3600)
+    def construct_nav(module=None, identity_name="anon", url_path=None):
+        participant_results = []
+        for participant, nav_entry in nav_build.send(module):
+            if isinstance(nav_entry, eventlet.greenthread.GreenThread):
+                nav_entry = nav_entry.wait()
+            elif not nav_entry:
+                continue
+            for prio, endpoint, name, partial in nav_entry:
+                participant_results.append((prio, name, endpoint, partial))
+        for (prio, name, endpoint, partial) in sorted(participant_results):
+            url = url_for(endpoint)
+            if request.path==url or (partial and request.path.startswith(url)):
+                yield url, name, "active"
+            else:
+                yield url, name, "inactive"
 
     @cache.memoize(3600)
     def construct_ctxnav(module=None, identity_name="anon", url_path=None):
@@ -234,6 +264,8 @@ def process_context():
         for participant, nav_entry in ctxnav_build.send(module):
             if isinstance(nav_entry, eventlet.greenthread.GreenThread):
                 nav_entry = nav_entry.wait()
+            elif not nav_entry:
+                continue
             for prio, endpoint, name, partial in nav_entry:
                 participant_results.append((prio, name, endpoint, partial))
         for (prio, name, endpoint, partial) in sorted(participant_results):
@@ -244,9 +276,13 @@ def process_context():
                 yield url, name, "inactive"
 
     return dict(
+        theme_name = app.config.get("THEME_NAME", 'smoothness'),
         account_nav=tuple(account_nav),
         profile_photo=profile_photo,
         request_path=request.path,
+        nav=construct_nav(
+            app.modules[request.module], g.identity.name, request.path
+        ),
         ctxnav=construct_ctxnav(
             app.modules[request.module], g.identity.name, request.path
         ),
@@ -275,7 +311,20 @@ def get_total_events():
     def get_total_events_from_db():
         from ilog.database.models import IRCEvent
         return IRCEvent.query.count()
-    return dict(total_events_logged=get_total_events_from_db())
+
+    @cache.cached(timeout=10, key_prefix='total_irc_channels')
+    def get_total_channels_from_db():
+        from ilog.database.models import Channel
+        return Channel.query.count()
+
+    @cache.cached(timeout=10, key_prefix='total_irc_networks')
+    def get_total_netwokrs_from_db():
+        from ilog.database.models import Network
+        return Network.query.count()
+
+    return dict(total_events_logged=get_total_events_from_db(),
+                total_channels_logged=get_total_channels_from_db(),
+                total_networks_logged=get_total_netwokrs_from_db())
 
 @request_started.connect_via(app)
 def on_request_started(app):

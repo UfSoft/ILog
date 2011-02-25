@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% from "_form_helpers.html" import render_pagination %}
+
+{% block contents %}
+  {% if pagination.items > 0 %}
+    <table class="listing ui-corner-all" width="100%">
+      <thead>
+        <tr class="ui-state-default">
+          <th>{% trans %}Name{% endtrans %}</th>
+          <th>{% trans %}Slug{% endtrans %}</th>
+          <th>{% trans %}Address{% endtrans %}</th>
+          <th>{% trans %}Port{% endtrans %}</th>
+          <th class="actions">{% trans %}Actions{% endtrans %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in pagination.items %}
+        <tr class="{{ loop.cycle('odd', 'even') }}">
+          <td>{{ entry.name }}</td>
+          <td>{{ entry.slug }}</td>
+          <td>{{ entry.host }}</td>
+          <td>{{ entry.port }}</td>
+          <td class="actions">
+            {% if entry.id in own_networks -%}
+            <a class="edit" alt="{{ _('Edit') }}" title="{{ _('Edit') }}"
+               href="{{ url_for('admin.networks.edit', id=entry.id) }}"></a>
+            {% endif %}
+            {% if is_admin %}
+            <a class="delete" alt="{{ _('Delete') }}" title="{{ _('Delete') }}"
+               href="{{ url_for('admin.networks.delete', id=entry.id) }}"></a>
+            {%- endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {{ render_pagination(pagination, 'admin.networks.index') }}
+  {% else %}
+    <p>{% trans %}No networks available{% endtrans %}</p>
+  {% endif %}
+{% endblock %}
+{% block footer %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $("td.actions>a.edit").button({text: false, icons: {primary: "ui-icon-pencil"}});
+      $("td.actions>a.delete").button({text: false, icons: {primary: "ui-icon-trash"}});
+    })
+  </script>
+{% endblock %}

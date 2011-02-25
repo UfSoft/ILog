@@ -1,0 +1,9 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  <p class="description">{% trans %}Are you you want to delete your account?{% endtrans %}</p>
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" name="cancel" type="submit" value="{{ _('Cancel') }}">
+  <input class="ui-button sensible" name="delete" type="submit" value="{{ _('Delete') }}">
+{% endblock %}

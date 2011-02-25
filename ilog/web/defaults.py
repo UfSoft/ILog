@@ -22,6 +22,7 @@ LOGGER_NAME = 'ilog.webserver'
 #SERVER_NAME = 'lgl.localhost'   # the name of the server. Required for subdomain support
 #SERVER_NAME = ''   # the name of the server. Required for subdomain support
 MAX_CONTENT_LENGTH = 8388608   # 8 MiB
+THEME_NAME = 'redmond'
 
 
 # I18N Support

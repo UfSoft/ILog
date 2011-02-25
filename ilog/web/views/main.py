@@ -14,21 +14,21 @@ from flask import Module, render_template, request
 from flaskext.babel import gettext as _
 from ilog.database import dbm
 from ilog.web.application import app, url_for
-from ilog.web.signals import ctxnav_build
+from ilog.web.signals import nav_build, ctxnav_build
 
 log = logging.getLogger(__name__)
 
 main = Module(__name__, name='main')
 
-@ctxnav_build.connect_via(main)
-def on_main_ctxnav_build(emitter):
+@nav_build.connect_via(main)
+def on_main_nav_build(emitter):
     return (
         # prio, endpoint, name, partial also macthes
         (0, 'main.libraries', _("Libraries"), False),
     )
 
-@ctxnav_build.connect
-def on_global_ctxnav_build(emitter):
+@nav_build.connect
+def on_global_nav_build(emitter):
     return (
         # prio, endpoint, name, partial also macthes
         (0, 'main.index', _("Home"), False),

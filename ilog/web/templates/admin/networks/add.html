@@ -1,0 +1,12 @@
+{% extends "_formbase.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block form_contents %}
+  {{ render_field(form.name, {'size': 20}) }}
+  {{ render_field(form.host, {'size': 20}) }}
+  {{ render_field(form.port, {'size': 6}) }}
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" type="submit" value="{{ _('Add') }}">
+  <input class="ui-button sensible" name="cancel" type="submit" value="{{ _('Cancel') }}">
+{% endblock %}

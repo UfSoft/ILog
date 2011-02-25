@@ -7,8 +7,10 @@
     <meta charset="utf-8">
     <link rel="icon" type="image/ico" href="{{ url_for('.static', filename='favicon.ico') }}">
     <link class="ui-theme" rel="stylesheet" type="text/css"
-          href="{{ url_for('.static', filename='ext/smoothness/jquery-ui-1.8.9.custom.css') }}">
+          href="{{ url_for('.static', filename='ext/%s/jquery-ui.custom.css' % theme_name ) }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='default.css') }}">
+    <link class="ui-theme" rel="stylesheet" type="text/css"
+          href="{{ url_for('.static', filename='%s.css' % theme_name ) }}">
     <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-1.4.3.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery.corner.js') }}"></script>
@@ -23,7 +25,7 @@
         <ul>
           {% if profile_photo -%}
           <li class="first active">
-            <img width="22" height="22" alt="" src="{{ profile_photo.url }}">
+            <img width="22" height="22" src="{{ profile_photo.url }}">
           </li>
           {%- endif %}
           {% for url, name, class in account_nav %}
@@ -35,12 +37,23 @@
       </div>
       <div id="header-logo">
         <span class="name">IRC Logging Network</span><br/>
-        <span class="counter">So Far We Have Logged<span id="counter">
-          {{ total_events_logged }}
-        </span>Events</span>
+        <span class="counter">So Far We Have Logged <span id="counter">
+          {{- total_events_logged -}}
+        </span> events from <span id="counter">
+          {{- total_channels_logged -}}
+        </span> channels on <span id="counter">
+          {{- total_networks_logged -}}
+        </span> networks</span>
       </div>
+      {% if nav -%}
+      <div id="nav" class="ui-widget-header ui-corner-all">
+        {% for url, name, class in nav %}
+        <a href="{{ url }}" class="{{ class }}">{{ name }}</a>
+        {% endfor %}
+      </div>
+      {%- endif %}
       {% if ctxnav -%}
-      <div id="ctx-nav" class="ui-widget-header ui-corner-all">
+      <div id="ctxnav">
         {% for url, name, class in ctxnav %}
         <a href="{{ url }}" class="{{ class }}">{{ name }}</a>
         {% endfor %}
@@ -62,7 +75,9 @@
       </div>
     </div>
     <script type="text/javascript">
-      $('#ctx-nav').buttonset();
+      $('#nav,#ctxnav').buttonset();
+      $('#ctxnav>a:first').removeClass('ui-corner-left').addClass('ui-corner-bl');
+      $('#ctxnav>a:last').removeClass('ui-corner-right').addClass('ui-corner-br');
     </script>
     {% block footer %}{% endblock %}
   </body>

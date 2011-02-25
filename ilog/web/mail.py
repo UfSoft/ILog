@@ -13,8 +13,9 @@ import cPickle
 import logging
 import eventlet
 eventlet.import_patched('smtplib')
+from datetime import datetime
 from eventlet.queue import Empty, PriorityQueue, Queue
-from flaskext.mail import Mail, Message, email_dispatched
+from flaskext.mail import Mail, Message as BaseMessage, email_dispatched
 from ilog.common import component_manager
 from ilog.common.interfaces import ComponentBase
 from ilog.web.signals import webapp_setup_complete, webapp_shutdown
@@ -23,6 +24,13 @@ log = logging.getLogger(__name__)
 
 class SendMessageTimeout(Exception):
     """Exception raised when sending a message takes too long."""
+
+class Message(BaseMessage):
+
+    def get_response(self):
+        response = BaseMessage.get_response(self)
+        response["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        return response
 
 class EMailManager(ComponentBase):
 
