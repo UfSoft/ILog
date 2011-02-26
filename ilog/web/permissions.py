@@ -9,14 +9,13 @@
 """
 
 import logging
-import eventlet
-from flask import flash, g, request
+from flask import g, session
 from flaskext.principal import *
 from sqlalchemy.exc import OperationalError
 from ilog.database import dbm
 from ilog.database.signals import database_setup
 from ilog.database.models import Account, Privilege
-from .application import app, redirect_to
+from .application import app
 
 log = logging.getLogger(__name__)
 
@@ -24,22 +23,17 @@ Identity.__repr__ = lambda x: """\
 <Identity name="%s" auth_type="%s" provides=%s>""" % (x.name, x.auth_type,
                                                       x.provides)
 
+Permission.__repr__ = lambda x: """\
+<Permission needs=%s excludes=%s>""" % (x.needs, x.excludes)
+
 principal = Principal(app, use_sessions=False, skip_static=True)
 
+manager_permission = Permission(RoleNeed('manager'))
+admin_permission = Permission(RoleNeed('administrator'))
+
 anonymous_permission = Permission()
-
-admin_role = RoleNeed('administrator')
-manager_role = RoleNeed('manager')
-
-manager_permission = Permission(manager_role)
-admin_permission = Permission(admin_role)
-
-admin_or_manager_permission = Permission(admin_role, manager_role)
-#admin_permission = manager_permission.union(Permission(RoleNeed('administrator')))
-#admin_permission = Permission(RoleNeed('administrator'), RoleNeed('manager'))
-#print 789, admin_permission.needs
-
 authenticated_permission = Permission(TypeNeed('authenticated'))
+
 
 @principal.identity_loader
 def load_request_identity():
@@ -98,3 +92,44 @@ def on_identity_loaded(sender, identity):
         # Database has not yet been setup
         pass
 
+
+#def require_permissions(f, needs=(), denials=()):
+def require_permissions(perms, from_keys=(), http_exception=None):
+    def wrapped(f):
+        def decorated(*args, **kwargs):
+            if isinstance(from_keys, basestring):
+                keys = [from_keys]
+            else:
+                keys = from_keys
+
+            if not isinstance(perms, (list, tuple)):
+                permissions = [perms]
+            else:
+                permissions = list(perms)
+
+            for key in keys:
+                value = kwargs.get(key, None)
+                if value:
+                    permission = Permission(ActionNeed("manage-%s" % value))
+                    permissions.append(permission)
+
+            denied_permissions = []
+            for permission in permissions:
+                if not isinstance(permission, Permission):
+                    permission = Permission(ActionNeed(permission))
+                if permission.allows(g.identity):
+                    return f(*args, **kwargs)
+
+                denied_permissions.append(permission)
+
+            if denied_permissions:
+                if http_exception:
+                    abort(http_exception, denied_permissions)
+                else:
+                    raise PermissionDenied(denied_permissions)
+
+        decorated.__name__ = f.__name__
+        decorated.__module__ = f.__module__
+        decorated.__doc__ = f.__doc__
+        return decorated
+    return wrapped
