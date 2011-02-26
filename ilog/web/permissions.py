@@ -28,8 +28,13 @@ Permission.__repr__ = lambda x: """\
 
 principal = Principal(app, use_sessions=False, skip_static=True)
 
-manager_permission = Permission(RoleNeed('manager'))
-admin_permission = Permission(RoleNeed('administrator'))
+admin_role = RoleNeed('administrator')
+admin_permission = Permission(admin_role)
+
+manager_role = RoleNeed('manager')
+manager_permission = Permission(manager_role)
+
+admin_or_manager_permission = Permission(admin_role, manager_role)
 
 anonymous_permission = Permission()
 authenticated_permission = Permission(TypeNeed('authenticated'))

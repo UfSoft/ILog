@@ -210,7 +210,7 @@ def on_401(error):
 @app.errorhandler(403)
 def on_403(error):
     flash(_("You don't the required permissions."), "error")
-    return redirect_to('main.index', code=307)
+    return redirect_back('main.index', code=307)
 
 
 # Account Navigation building
