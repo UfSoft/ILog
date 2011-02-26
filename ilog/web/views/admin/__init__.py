@@ -26,6 +26,8 @@ def on_admin_nav_build(emitter):
         navigation.extend([
             (1, 'admin.dashboard', _("Dashboard"), False),
             (2, 'admin.accounts.index', _("Accounts"), True)
+            (2, 'admin.accounts.index', _("Groups"), True)
+            (2, 'admin.accounts.index', _("Permissions"), True)
         ])
 
     navigation.extend([

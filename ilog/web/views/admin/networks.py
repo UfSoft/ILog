@@ -14,7 +14,7 @@ from flaskext.babel import gettext as _
 from ilog.database import dbm
 from ilog.database.models import Group, Network, Privilege
 from ilog.web.application import redirect_to, redirect_back
-from ilog.web.permissions import admin_permission, manager_permission, admin_or_manager_permission
+from ilog.web.permissions import admin_permission, manager_permission, admin_or_manager_permission, require_permissions
 from ilog.web.signals import ctxnav_build, nav_build
 from ilog.web.views.admin.forms import AddNetwork, DeleteNetwork, EditNetwork
 
@@ -33,15 +33,8 @@ def on_networks_ctxnav_build(emitter):
 
 @networks.route('/', defaults={'page': 1})
 @networks.route('/page/<int:page>')
-@admin_or_manager_permission.require(403)
+@require_permissions((admin_permission, manager_permission), http_exception=403)
 def index(page=1):
-#    if not g.identity.can(admin_permission):
-#        networks = Network.query.filter(
-#            Network.created_by_id==g.identity.account.id
-#        )
-#    else:
-#        networks = Network.query
-#    pagination = networks.paginate(page=page, per_page=25)
     pagination = Network.query.paginate(page=page, per_page=25)
     if g.identity.can(admin_permission):
         own_networks = [i.id for i in pagination.items]
@@ -56,7 +49,7 @@ def index(page=1):
                            is_admin=g.identity.can(admin_permission))
 
 @networks.route('/add', methods=("GET", "POST"))
-@admin_or_manager_permission.require(403)
+@require_permissions((admin_permission, manager_permission), http_exception=403)
 def add():
     form = AddNetwork(formdata=request.values.copy())
     if form.validate_on_submit():
@@ -73,19 +66,19 @@ def add():
         dbm.session.add(network)
         dbm.session.commit()
         flash(_("Network \"%(name)s\" added.", name=network.name))
-        return redirect_to("admin.networks.edit", id=network.id)
+        return redirect_to("admin.networks.edit", slug=network.slug)
 
     return render_template('admin/networks/add.html', form=form)
 
-@networks.route('/edit/<int:id>', methods=("GET", "POST"))
-@admin_or_manager_permission.require(403)
-def edit(id=None):
+@networks.route('/edit/<slug>', methods=("GET", "POST"))
+@require_permissions(admin_permission, 'slug', http_exception=403)
+def edit(slug=None):
     if 'delete' in request.values:
-        return redirect_to('admin.networks.delete', id=id)
+        return redirect_to('admin.networks.delete', slug=slug)
     elif 'cancel' in request.values:
         return redirect_back('admin.networks.index')
 
-    network = Network.query.get(id)
+    network = Network.query.get(slug)
 
     form = EditNetwork(network, request.values.copy())
     if form.validate_on_submit():
@@ -97,13 +90,13 @@ def edit(id=None):
         return redirect_to("admin.networks.index")
     return render_template('admin/networks/edit.html', form=form)
 
-@networks.route('/delete/<int:id>')
-@admin_or_manager_permission.require(403)
-def delete(id=None):
+@networks.route('/delete/<slug>')
+@require_permissions(admin_permission, http_exception=403)
+def delete(slug=None):
     if 'cancel' in request.values:
-        return redirect_back('admin.networks.edit', id=id)
+        return redirect_back('admin.networks.edit', slug=slug)
 
-    network = Network.query.get(id)
+    network = Network.query.get(slug)
     form = DeleteNetwork(network, request.values.copy())
     if form.validate_on_submit():
         manage_privilege = Privilege.query.get("manage-%" % network.slug)
