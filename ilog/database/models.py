@@ -18,7 +18,7 @@ from sqlalchemy import orm
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
-from ilog.database import dbm
+from ilog.database import dbm, BaseQuery
 
 log = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ account_privileges = dbm.Table('account_privileges', dbm.metadata,
     dbm.Column('privilege_id', dbm.ForeignKey('privileges.id'))
 )
 
-class GroupQuery(orm.Query):
+class GroupQuery(BaseQuery):
 
     def get(self, privilege):
         if isinstance(privilege, basestring):
@@ -257,6 +257,13 @@ group_privileges = dbm.Table('group_privileges', dbm.metadata,
     dbm.Column('privilege_id', dbm.ForeignKey('privileges.id'))
 )
 
+class NetworkQuery(BaseQuery):
+
+    def get(self, slug_or_id):
+        if isinstance(slug_or_id, basestring):
+            return self.filter(Network.slug==slug_or_id).first()
+        return orm.Query.get(slug_or_id)
+
 class Network(dbm.Model):
     __tablename__ = 'networks'
     id            = dbm.Column(dbm.Integer, primary_key=True)
@@ -270,6 +277,8 @@ class Network(dbm.Model):
                                  cascade='all, delete')
     channels      = dbm.dynamic_loader("Channel", backref="network",
                                        cascade='all, delete, delete-orphan')
+
+    query_class   = NetworkQuery
 
     def __init__(self, name, host, port=6667, slug=None):
         if not slug:
@@ -304,6 +313,13 @@ class TopicChange(dbm.Model):
     def __init__(self, topic):
         self.topic = topic
 
+class ChannelQuery(BaseQuery):
+
+    def get(self, slug_or_id):
+        if isinstance(slug_or_id, basestring):
+            return self.filter(Channel.slug==slug_or_id).first()
+        return orm.Query.get(slug_or_id)
+
 class Channel(dbm.Model):
     __tablename__ = 'channels'
     id            = dbm.Column(dbm.Integer, primary_key=True)
@@ -321,6 +337,8 @@ class Channel(dbm.Model):
                                  cascade="all, delete, delete-orphan")
     created_by    = dbm.relation("Account", backref="channels", lazy=True,
                                  cascade='all, delete')
+
+    query_class   = ChannelQuery
 
     def __init__(self, name, slug=None, prefix=None, key=None):
         if not prefix and name[0] in "#&":
