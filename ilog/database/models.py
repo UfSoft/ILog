@@ -271,6 +271,7 @@ class Network(dbm.Model):
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
+    created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
     created_by    = dbm.relation("Account", backref="networks", lazy=True,
@@ -328,6 +329,7 @@ class Channel(dbm.Model):
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
+    created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
