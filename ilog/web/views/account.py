@@ -33,10 +33,17 @@ account = Module(__name__, name="account", url_prefix='/account')
 def on_account_nav_build(emitter):
     return (
         # prio, endpoint, name, partial also macthes
-        (10, 'account.profile', _("My Profile"), False),
-        (10, 'account.photos', _("Profile Photos"), False),
+        (10, 'account.profile', _("My Profile"), True),
     )
 
+@ctxnav_build.connect_via(account)
+def on_networks_ctxnav_build(emitter):
+    return (
+        # prio, endpoint, name, partial also macthes
+        (1, 'account.profile', _("Profile Details"), False),
+        (2, 'account.formats', _("Date & Time Formats"), False),
+        (2, 'account.photos', _("Profile Photos"), False),
+    )
 
 @account.route('/signin', methods=("GET", "POST"))
 def signin():
@@ -391,4 +398,9 @@ def delete_account():
 @account.route('/photos', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def photos():
+    raise NotImplementedError()
+
+@account.route('/photos', methods=('GET', 'POST'))
+@authenticated_permission.require(401)
+def formats():
     raise NotImplementedError()
