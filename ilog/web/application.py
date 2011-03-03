@@ -90,6 +90,9 @@ class Application(Flask):
                           log_output.read().strip())
                 del log_output, StringIO, pprint, current_config
 
+                from eventlet import debug
+                debug.hub_blocking_detection(True, 1)
+
         # Setup views
         from .views.main import main
         from .views.account import account
@@ -209,7 +212,7 @@ def on_401(error):
 
 @app.errorhandler(403)
 def on_403(error):
-    flash(_("You don't the required permissions."), "error")
+    flash(_("You don't have the required permissions."), "error")
     return redirect_back('main.index', code=307)
 
 
