@@ -1,0 +1,18 @@
+{% extends "admin/_formbase.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block form_contents %}
+  {{ render_field(form.network) }}
+  {{ render_field(form.name, {'size': 20}) }}
+  <div class="flash-message ui-state-highlight ui-corner-all">
+    <p>
+      <strong>{% trans %}Note:{% endtrans %}</strong>
+      {% trans %}An attempt to connect to the network and join the channel will
+      be made. This can, at some times, take up to 30 seconds.{% endtrans %}
+    </p>
+  </div>
+{% endblock %}
+{% block form_actions %}
+  <input class="ui-button" type="submit" value="{{ _('Add') }}">
+  <input class="ui-button sensible" name="cancel" type="submit" value="{{ _('Cancel') }}">
+{% endblock %}

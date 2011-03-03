@@ -1,0 +1,51 @@
+{% extends "admin/layout.html" %}
+{% from "_form_helpers.html" import render_pagination %}
+
+{% block admin_title %}{% trans %}Channels Listing{% endtrans %}{% endblock %}
+
+{% block contents %}
+  {% if pagination.items %}
+    <table class="listing ui-corner-all" width="100%">
+      <thead>
+        <tr class="ui-state-default">
+          <th>{% trans %}Name{% endtrans %}</th>
+          <th>{% trans %}Network{% endtrans %}</th>
+          <th class="small">{% trans %}Slug{% endtrans %}</th>
+          <th class="small">{% trans %}Created On{% endtrans %}</th>
+          <th class="small">{% trans %}Created By{% endtrans %}</th>
+          <th class="small actions">{% trans %}Actions{% endtrans %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in pagination.items %}
+        <tr class="{{ loop.cycle('odd', 'even') }}">
+          <td><tt>{{ entry.prefixed_name }}</tt></td>
+          <td>{{ entry.network.name }}</td>
+          <td class="small center">{{ entry.slug }}</td>
+          <td class="small center">{{ entry.created_on|datetimeformat }}</td>
+          <td class="small center">{{ entry.created_by.username }}</td>
+          <td class="actions center small">
+            {% if entry.id in own_channels or is_admin -%}
+            <!-- <a class="edit" alt="{{ _('Edit') }}" title="{{ _('Edit') }}"
+               href="{{ url_for('admin.channels.edit', slug=entry.slug) }}"></a> -->
+            <a class="delete" alt="{{ _('Delete') }}" title="{{ _('Delete') }}"
+               href="{{ url_for('admin.channels.delete', slug=entry.slug) }}"></a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {{ render_pagination(pagination, 'admin.channels.index') }}
+  {% else %}
+    <p>{% trans %}No channels available{% endtrans %}</p>
+  {% endif %}
+{% endblock %}
+{% block footer %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $("td.actions>a.edit").button({text: false, icons: {primary: "ui-icon-pencil"}});
+      $("td.actions>a.delete").button({text: false, icons: {primary: "ui-icon-trash"}});
+    })
+  </script>
+{% endblock %}
