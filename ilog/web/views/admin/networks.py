@@ -82,6 +82,7 @@ def edit(slug=None):
 
     form = EditNetwork(network, request.values.copy())
     if form.validate_on_submit():
+        # TODO: If name changed also change permission name
         form.db_entry.name = form.data.get('name', form.db_entry.name)
         form.db_entry.host = form.data.get('host', form.db_entry.host)
         form.db_entry.port = form.data.get('port', form.db_entry.port)
@@ -102,8 +103,8 @@ def delete(slug=None):
         manage_privilege = Privilege.query.get("manage-%" % network.slug)
         if manage_privilege:
             dbm.session.delete(manage_privilege)
+        flash(_("Network \"%(name)s\" deleted.", name=network.name))
         dbm.session.delete(network)
         dbm.session.commit()
-        flash(_("Network \"%(name)s\" deleted.", name=form.name.value))
         return redirect_to("admin.networks.index")
     return render_template('admin/networks/delete.html', form=form)
