@@ -1,8 +1,10 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% from "_form_helpers.html" import render_pagination %}
 
+{% block admin_title %}{% trans %}Networks Listing{% endtrans %}{% endblock %}
+
 {% block contents %}
-  {% if pagination.items > 0 %}
+  {% if pagination.items %}
     <table class="listing ui-corner-all" width="100%">
       <thead>
         <tr class="ui-state-default">
@@ -11,6 +13,8 @@
           <th class="small">{% trans %}Port{% endtrans %}</th>
           <th class="small">{% trans %}Slug{% endtrans %}</th>
           <th class="small">{% trans %}Channels{% endtrans %}</th>
+          <th class="small">{% trans %}Created On{% endtrans %}</th>
+          <th class="small">{% trans %}Created By{% endtrans %}</th>
           <th class="small actions">{% trans %}Actions{% endtrans %}</th>
         </tr>
       </thead>
@@ -22,6 +26,8 @@
           <td class="small center">{{ entry.port }}</td>
           <td class="small center">{{ entry.slug }}</td>
           <td class="small center actions">{{ entry.channels.count() }}</td>
+          <td class="small center">{{ entry.created_on|datetimeformat }}</td>
+          <td class="small center">{{ entry.created_by.username }}</td>
           <td class="actions">
             {% if entry.id in own_networks -%}
             <a class="edit" alt="{{ _('Edit') }}" title="{{ _('Edit') }}"

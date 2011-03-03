@@ -1,4 +1,4 @@
-{% extends "_formbase.html" %}
+{% extends "admin/_formbase.html" %}
 {% from "_form_helpers.html" import render_field %}
 
 {% block form_contents %}
@@ -6,6 +6,13 @@
   {{ render_field(form.host, {'size': 20}) }}
   {{ render_field(form.port, {'size': 6}) }}
   {{ render_field(form.slug, {'size': 20}) }}
+  <div class="flash-message ui-state-highlight ui-corner-all">
+    <p>
+      <strong>{% trans %}Note:{% endtrans %}</strong>
+      {% trans %}An attempt to connect to the network will be made and this can,
+      at some, times take up to 30 seconds.{% endtrans %}
+    </p>
+  </div>
 {% endblock %}
 {% block form_actions %}
   <input class="ui-button" type="submit" value="{{ _('Update') }}">
