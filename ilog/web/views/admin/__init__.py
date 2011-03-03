@@ -25,18 +25,18 @@ def on_admin_nav_build(emitter):
     if g.identity.can(admin_permission):
         navigation.extend([
             (1, 'admin.dashboard', _("Dashboard"), False),
-            (2, 'admin.accounts.index', _("Accounts"), True)
-            (2, 'admin.accounts.index', _("Groups"), True)
-            (2, 'admin.accounts.index', _("Permissions"), True)
+            (4, 'admin.accounts.index', _("Accounts"), True),
+            (4, 'admin.accounts.index', _("Groups"), True),
+            (4, 'admin.accounts.index', _("Permissions"), True)
         ])
 
     navigation.extend([
-        (3, 'admin.networks.index', _("Networks"), True),
-        (4, 'admin.channels.index', _("Channels"), True)
+        (2, 'admin.networks.index', _("Networks"), True),
+        (3, 'admin.channels.index', _("Channels"), True)
     ])
     return navigation
 
 @admin.route('/')
 @admin.route('/dashboard')
 def dashboard():
-    return render_template('index.html')
+    return render_template('admin/dashboard.html')
