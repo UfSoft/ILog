@@ -51,12 +51,13 @@ def setup_logging(log_to_file=False):
 
         handler.setLevel(1)
         handler.setFormatter(formatter)
-        logging.getLogger('').addHandler(handler)
+        logging.root.addHandler(handler)
 
         logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
         logging.getLogger('migrate').setLevel(logging.INFO)
         logging.addLevelName(logging.TRACE, "TRACE")
         logging.addLevelName(logging.GARBAGE, "GARBAGE")
+        logging.root.setLevel(1)
 
 log_levels = {
     "none": logging.NOTSET,
