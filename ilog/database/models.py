@@ -266,6 +266,8 @@ class NetworkQuery(BaseQuery):
 
 class Network(dbm.Model):
     __tablename__ = 'networks'
+    __mapper_args__ = {'order_by': "name"}
+
     id            = dbm.Column(dbm.Integer, primary_key=True)
     slug          = dbm.Column(dbm.String(10), unique=True, index=True)
     name          = dbm.Column(dbm.String(30))
@@ -337,8 +339,9 @@ class Channel(dbm.Model):
     topic         = dbm.relation("TopicChange", backref="channel",
                                  single_parent=True,
                                  cascade="all, delete, delete-orphan")
-    created_by    = dbm.relation("Account", backref="channels", lazy=True,
-                                 cascade='all, delete')
+    events        = dbm.relation("IRCEvent", backref="channel",
+                                 cascade="all, delete, delete-orphan")
+    created_by    = dbm.relation("Account", backref="channels", lazy=True)
 
     query_class   = ChannelQuery
 
@@ -346,12 +349,19 @@ class Channel(dbm.Model):
         if not prefix and name[0] in "#&":
             prefix = name[0]
             name = name[1:]
+        elif not prefix and name[0] not in "#&":
+            prefix = "#"
+            name = name
         if not slug:
             slug = gen_slug(name)
         self.slug = slug
         self.name = name
         self.prefix = prefix
         self.key = key
+
+    @property
+    def prefixed_name(self):
+        return ''.join([self.prefix, self.name])
 
 class IRCEventType(dbm.Model):
     __tablename__ = 'irc_event_types'
