@@ -94,19 +94,19 @@ class Account(dbm.Model):
 
     # Relationships
     privileges    = dbm.relation("Privilege", secondary="account_privileges",
-                                backref="priveliged_accounts", lazy=True,
-                                collection_class=set, cascade='all, delete')
+                                 backref="priveliged_accounts", lazy=True,
+                                 collection_class=set, cascade='all, delete')
 
     groups        = None    # Defined on Group
     providers     = dbm.relation("AccountProvider", backref="account",
-                                collection_class=set,
-                                cascade="all, delete, delete-orphan")
+                                 collection_class=set,
+                                 cascade="all, delete, delete-orphan")
 
     identities    = None    # Defined on Identity
 
     email_addresses = dbm.relation("EMailAddress", backref="account",
-                                  collection_class=set,
-                                  cascade="all, delete, delete-orphan")
+                                   collection_class=set,
+                                   cascade="all, delete, delete-orphan")
     profile_photos  = dbm.dynamic_loader("ProfilePhoto", backref="account",
                                          cascade="all, delete, delete-orphan")
 
