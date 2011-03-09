@@ -3,6 +3,8 @@
     ilog.web.defaults
     ~~~~~~~~~~~~~~~~~
 
+    Web related configuration defaults.
+
 
     :copyright: © 2011 UfSoft.org - :email:`Pedro Algarvio (pedro@algarvio.me)`
     :license: BSD, see LICENSE for more details.
@@ -10,6 +12,8 @@
 
 from os import path
 from datetime import timedelta
+# Import common config defaults
+from ilog.common.configdefaults import *
 
 # Built-in settings
 DEBUG = False    # enable/disable debug mode
@@ -54,14 +58,6 @@ DEFAULT_MAIL_SENDER=''
 MAIL_SUPPRESS_SEND=False
 MAIL_FAIL_SILENTLY=True
 DEFAULT_MAX_EMAILS=None
-
-# Database Settings
-SQLALCHEMY_DATABASE_URI = None
-SQLALCHEMY_RECORD_QUERIES = False
-SQLALCHEMY_NATIVE_UNICODE = False
-SQLALCHEMY_POOL_SIZE = 5
-SQLALCHEMY_POOL_TIMEOUT = 10
-SQLALCHEMY_POOL_RECYCLE = 3600
 
 # WTForms Settings
 CSRF_ENABLED=True

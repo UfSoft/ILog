@@ -40,12 +40,12 @@ class Application(Flask):
     def on_running_signal(self, emitter):
         try:
             sys.path.insert(0, os.getcwd())
-            import ilogconfig
-            log.info("Found \"ilogconfig.py\" on %s",
-                     os.path.abspath(os.path.dirname(ilogconfig.__file__)))
-            self.config.from_object(ilogconfig)
+            import ilogwebconfig
+            log.info("Found \"ilogwebconfig.py\" on %s",
+                     os.path.abspath(os.path.dirname(ilogwebconfig.__file__)))
+            self.config.from_object(ilogwebconfig)
         except ImportError:
-            log.info("No \"ilogconfig.py\" found. Using default configuration.")
+            log.info("No \"ilogwebconfig.py\" found. Using default configuration.")
         self.logger_name = '.'.join([__name__, 'SERVER'])
 
         theme_name = self.config.get("THEME_NAME", None)
@@ -90,8 +90,8 @@ class Application(Flask):
                           log_output.read().strip())
                 del log_output, StringIO, pprint, current_config
 
-                from eventlet import debug
-                debug.hub_blocking_detection(True, 1)
+            from eventlet import debug
+            debug.hub_blocking_detection(True, 1)
 
         # Setup views
         from .views.main import main
