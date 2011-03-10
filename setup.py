@@ -57,7 +57,9 @@ setup(name=ilog.__package_name__,
       },
       entry_points = """
       [console_scripts]
-      ilog-web = ilog.web.daemon:start_daemon
+      ilog-core = ilog.irc.daemon:start_daemon
+      ilog-bot  = ilog.irc.daemon:start_bot
+      ilog-web  = ilog.web.daemon:start_daemon
 
       [distutils.commands]
       compile = babel.messages.frontend:compile_catalog
