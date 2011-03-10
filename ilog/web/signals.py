@@ -15,7 +15,7 @@ Emitted once the web application has been fully configured.
 """)
 
 webapp_shutdown = signal("webapp-shutdown", """\
-Emitted once the web application has been fully configured.
+Emitted once the web application has been fully shutdown.
 """)
 
 nav_build = signal("nav-build", """\
