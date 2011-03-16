@@ -15,12 +15,11 @@
 
 import re
 import logging
-import eventlet
-from eventlet import tpool
-# Need to import exceptions myself so that errors are not thrown
-eventlet.import_patched("migrate.exceptions")
-migrate = eventlet.import_patched("migrate")
-eventlet.import_patched("sqlalchemy.engine.default")
+import gevent
+from gevent import monkey, pool
+monkey.patch_all()
+
+import migrate
 import sqlalchemy
 import sqlalchemy.orm
 from os import path
@@ -125,7 +124,7 @@ class _SignallingSession(Session):
         self._model_changes = {}
 
     def commit(self):
-        eventlet.spawn(Session.commit, self).wait()
+        gevent.spawn(Session.commit, self).join()
 
 
 class _ModelTableNameDescriptor(object):
@@ -337,7 +336,7 @@ class DatabaseManager(ComponentBase):
         if uri != self.database_uri:
             log.debug("Setting database URI to %s", uri)
             self.database_uri = uri
-            eventlet.spawn(self.create_engine)
+            gevent.spawn_raw(self.create_engine)
 
     def create_engine(self):
         """Create the database engine"""
@@ -381,9 +380,6 @@ class DatabaseManager(ComponentBase):
                     log.warn("SQLite database is using the NullPool")
                     from sqlalchemy.pool import NullPool
                     options['poolclass'] = NullPool
-            else:
-                from .green import GreenSingletonThreadPool
-                options['poolclass'] = GreenSingletonThreadPool
         else:
             info = make_url(self.database_uri)
             # if mysql is the database engine, god forbid, and no connection
@@ -393,12 +389,29 @@ class DatabaseManager(ComponentBase):
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
             elif info.drivername.startswith('postgresql+psycopg2'):
-                from psycopg2 import extensions
+                from psycopg2 import extensions, OperationalError
+                from gevent.socket import wait_read, wait_write
                 options['use_native_unicode'] = self.native_unicode
 
+                def wait_callback(conn, timeout=None):
+                    """
+                    A wait callback useful to allow gevent to work with Psycopg.
+                    https://bitbucket.org/dvarrazzo/psycogreen/src/tip/gevent/
+                    """
+                    while True:
+                        state = conn.poll()
+                        if state == extensions.POLL_OK:
+                            break
+                        elif state == extensions.POLL_READ:
+                            wait_read(conn.fileno(), timeout=timeout)
+                        elif state == extensions.POLL_WRITE:
+                            wait_write(conn.fileno(), timeout=timeout)
+                        else:
+                            raise OperationalError(
+                                "Bad result from poll: %r" % state
+                            )
                 if hasattr(extensions, 'set_wait_callback'):
-                    from eventlet.support import psycopg2_patcher
-                    psycopg2_patcher.make_psycopg_green()
+                    extensions.set_wait_callback(wait_callback)
 
         dialect_cls = info.get_dialect()
 
@@ -413,33 +426,6 @@ class DatabaseManager(ComponentBase):
         # assemble connection arguments for this dialect
         (cargs, connection_params) = dialect.create_connect_args(info)
         log.debug("CARGS: %s; CONNECTION_PARAMS: %s;", cargs, connection_params)
-
-        def eventlet_connection_creator():
-            """Creator method to wrap DBAPI connections with native threads to
-            allow non-blocking db access."""
-            # This code is lifted and slightly tweaked
-            # from the db_pool in the eventlet package
-            timeout = eventlet.Timeout(5, ConnectTimeout)
-            try:
-                if self.database_uri.startswith('sqlite:'):
-#                    return dbapi.connect(cargs[0], **connection_params)
-                    conn = eventlet.spawn(dbapi.connect, cargs[0],
-                                          **connection_params)
-                    return conn.wait()
-
-                conn = dbapi.connect(cargs[0], **connection_params)
-                ## I think this is to keep the connection itself from blocking
-                ## unfortunately it's hanging. The proxied connection still works
-                ## nonblockingly though.
-                # conn = tpool.execute(dbapi.connect, **kw)
-                proxied_connection = tpool.Proxy(conn, autowrap_names=('cursor',))
-                return proxied_connection
-            finally:
-                # cancel the timeout
-                timeout.cancel()
-
-        options.setdefault('creator', eventlet_connection_creator)
-
         log.debug("Creating db engine. info: %s; options: %s;", info, options)
         engine = sqlalchemy.create_engine(info, **options)
         database_engine_created.send(self, engine=engine)
@@ -471,35 +457,45 @@ class DatabaseManager(ComponentBase):
                 )
                 self.session.commit()
 
+            upool = pool.Pool()
             schema_version = self.session.query(SchemaVersion).get(repo_id)
             if schema_version.version < repository.latest:
-                log.warn("Upgrading database (from -> to...) on repository "
-                         "\"%s\"", repo_id)
+                upool.spawn(
+                    log.warn, "Upgrading database (from -> to...) on repository"
+                    " \"%s\"", repo_id
+                )
                 try:
-                    eventlet.spawn(upgrade, self.database_engine, repository)
+                    upool.spawn(upgrade, self.database_engine, repository)
                 except Exception, err:
                     log.exception(err)
-                log.warn("Upgrade complete for repository \"%s\"", repo_id)
+                upool.spawn(
+                    log.warn, "Upgrade complete for repository \"%s\"", repo_id
+                )
             else:
-                log.debug("No database upgrade required for repository: \"%s\"",
-                         repo_id)
+                upool.spawn(
+                    log.debug,
+                    "No database upgrade required for repository: \"%s\"",
+                    repo_id
+                )
 
-        log.debug("Upgrades complete.")
+        upool.spawn(log.debug, "Upgrades complete.")
+        upool.join()
+
         database_upgraded.send(self)
-        eventlet.sleep(0.1)
+        gevent.sleep(0.1)
 
     def on_database_engine_created(self, emitter, engine):
         self.database_engine = engine
         self.metadata.bind = engine
 
-        def eventlet_greenlet_scope():
-            return id(eventlet.greenthread.getcurrent())
+        def greenlet_scope():
+            return id(gevent.getcurrent())
 
         self.session = orm.scoped_session(
             partial(_SignallingSession, self, autoflush=False, autocommit=False),
-            scopefunc=eventlet_greenlet_scope
+            scopefunc=greenlet_scope
         )
-        eventlet.spawn(self.upgrade_database)
+        gevent.spawn(self.upgrade_database)
 
     def on_database_upgraded(self, emitter):
         database_setup.send(self)

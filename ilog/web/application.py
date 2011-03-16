@@ -11,15 +11,11 @@
 import os
 import sys
 import logging
-import eventlet
+import gevent
 from urlparse import urlparse, urljoin
 from flask import Flask, flash, g, redirect, url_for, request, session, Markup
 from flask.signals import request_started, request_finished
 
-# Import Green patched versions first
-eventlet.import_patched('flaskext.cache')
-eventlet.import_patched('flaskext.babel')
-eventlet.import_patched('flaskext.mail')
 # Now the usefull imports
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
@@ -63,11 +59,9 @@ class Application(Flask):
 
         if self.debug:
             # LessCSS Support
-            eventlet.import_patched('flaskext.lesscss')
             from flaskext.lesscss import lesscss
             lesscss(self, self.config['LESSC_BIN_PATH'])
 
-            eventlet.import_patched('werkzeug.debug')
             from werkzeug.debug import DebuggedApplication
             self.wsgi_app = DebuggedApplication(self.wsgi_app, True)
 
@@ -90,8 +84,6 @@ class Application(Flask):
                           log_output.read().strip())
                 del log_output, StringIO, pprint, current_config
 
-            from eventlet import debug
-            debug.hub_blocking_detection(True, 1)
 
         # Setup views
         from .views.main import main
@@ -108,7 +100,7 @@ class Application(Flask):
         self.register_module(networks)
 
         # WebApp setup is complete. Signal it.
-        eventlet.sleep(0.5)
+        gevent.sleep(0.5)
         webapp_setup_complete.send(self)
 
     def shutdown(self):
@@ -248,9 +240,7 @@ def process_context():
     def construct_nav(module=None, identity_name="anon", url_path=None):
         participant_results = []
         for participant, nav_entry in nav_build.send(module):
-            if isinstance(nav_entry, eventlet.greenthread.GreenThread):
-                nav_entry = nav_entry.wait()
-            elif not nav_entry:
+            if not nav_entry:
                 continue
             for prio, endpoint, name, partial in nav_entry:
                 participant_results.append((prio, name, endpoint, partial))
@@ -265,9 +255,7 @@ def process_context():
     def construct_ctxnav(module=None, identity_name="anon", url_path=None):
         participant_results = []
         for participant, nav_entry in ctxnav_build.send(module):
-            if isinstance(nav_entry, eventlet.greenthread.GreenThread):
-                nav_entry = nav_entry.wait()
-            elif not nav_entry:
+            if not nav_entry:
                 continue
             for prio, endpoint, name, partial in nav_entry:
                 participant_results.append((prio, name, endpoint, partial))
@@ -359,6 +347,10 @@ def on_request_finished(app, response):
         skip_verified_warning = session.pop('_skip_verified_warning', None)
         if skip_verified_warning:
             app.save_session(session, response)
+
+
+import gevent.monkey
+gevent.monkey.patch_all()
 
 #@app.before_request
 #def before_request():

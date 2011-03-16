@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from ilog.common.evblinker import signal
+from ilog.common.signals import signal
 
 database_engine_created = signal("database-engine-created", """\
 This signal is emmited once we have a database engine.

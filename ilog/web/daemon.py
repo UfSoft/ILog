@@ -8,14 +8,10 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from eventlet.hubs import use_hub
-use_hub('zeromq')
-
-import eventlet
-eventlet.patcher.monkey_patch(all=True)
-time = eventlet.patcher.original('time')
-eventlet.import_patched('smtplib')
-from eventlet import wsgi
+import gevent
+import gevent.monkey
+gevent.monkey.patch_all()
+from gevent import wsgi, pool
 
 import logging
 from ilog.common.daemonbase import BaseDaemon, BaseOptionParser
@@ -73,23 +69,23 @@ class Daemon(BaseDaemon):
         logging.getLogger(__name__).info("Webserver Daemon Running")
         daemonized.send(self)
         def start_serving():
-            wsgi.server(
-                eventlet.listen((self.serve_host, self.serve_port)),
+            wsgi.WSGIServer(
+                (self.serve_host, self.serve_port),
                 app,
                 log=FilelikeLogger(),
-                log_format=FilelikeLogger.LOG_FORMAT
-            )
+                spawn=pool.Pool(10000) # do not accept more than 10000 connections
+            ).serve_forever()
 
         if self.use_reloader:
             import werkzeug.serving
             start_serving = werkzeug.serving.run_with_reloader(start_serving)
 
-        eventlet.spawn_n(start_serving)
+        serve = gevent.spawn(start_serving)
         running.send(self)
 
-
-        while True:
-            eventlet.sleep(10)
+        serve.join()
+#        while True:
+#            gevent.sleep(10)
 
     def exit(self):
         self.exited = False

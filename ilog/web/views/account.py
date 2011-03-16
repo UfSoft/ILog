@@ -9,9 +9,10 @@
 """
 
 import logging
-import eventlet
+import gevent
 import simplejson
-from eventlet.green import urllib, urllib2
+import urllib
+import urllib2
 from flask import Module, url_for, g, flash, request, session, render_template
 from flaskext.babel import gettext as _
 from flaskext.principal import AnonymousIdentity, Identity, identity_changed
@@ -314,7 +315,7 @@ def register():
             )
         )
         message.body = body
-        eventlet.spawn_after(1, mail.send, message)
+        gevent.spawn_later(1, mail.send, message)
         flash(_("An email has been sent to confirm your email address"))
         return redirect_to('account.profile')
     return render_template('account/register.html', form=form)
@@ -338,7 +339,7 @@ def activate(hash):
     body = render_template('emails/welcome.txt',
                            account=activation_key.email.account)
     message.body = body
-    eventlet.spawn_after(1, mail.send, message)
+    gevent.spawn_later(1, mail.send, message)
     dbm.session.delete(activation_key)
     dbm.session.commit()
     flash(_("Your account is now fully active."))
@@ -372,7 +373,7 @@ def resend_activation_email():
                     "the email address", address=email.address))
 
     for message in messages:
-        eventlet.spawn_after(1, mail.send, message)
+        gevent.spawn_later(1, mail.send, message)
 
     return redirect_back('account.profile')
 

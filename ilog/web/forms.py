@@ -10,21 +10,12 @@
 
 
 import logging
-import eventlet
+import gevent
+import pytz
 from flask import flash, Markup
 from flaskext.babel import gettext as _
-eventlet.import_patched('json')
-eventlet.import_patched('flaskext.wtf.recaptcha')
-eventlet.import_patched('flaskext.wtf.html5')
-#eventlet.import_patched('flaskext.wtf')
 from flaskext.wtf import *
-eventlet.import_patched('babel')
-eventlet.import_patched('babel.dates')
 from babel.dates import get_timezone_name
-pytz = eventlet.import_patched('pytz')
-#eventlet.import_patched('pytz.timezone')
-#eventlet.import_patched('pytz.common_timezones')
-#from pytz import timezone, common_timezones
 from werkzeug.datastructures import MultiDict
 
 from ilog.database.models import Account, AccountProvider

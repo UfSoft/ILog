@@ -11,10 +11,9 @@
 import os
 import cPickle
 import logging
-import eventlet
-eventlet.import_patched('smtplib')
+import gevent
 from datetime import datetime
-from eventlet.queue import Empty, PriorityQueue, Queue
+from gevent.queue import Empty, PriorityQueue, Queue
 from flaskext.mail import Mail, Message as BaseMessage, email_dispatched
 from ilog.common import component_manager
 from ilog.common.interfaces import ComponentBase
@@ -60,7 +59,7 @@ class EMailManager(ComponentBase):
             unsend_emails = cPickle.load(open(self.unsent_emails_pickle, 'rb'))
             for priority, message in unsend_emails:
                 unsent_emails_count += 1
-                eventlet.spawn_after(1, self.send, message, priority)
+                gevent.spawn_later(1, self.send, message, priority)
             log.debug("Loaded %s unsent emails from file backup",
                       unsent_emails_count)
         except IOError:
@@ -117,7 +116,7 @@ class EMailManager(ComponentBase):
             self.processing = None
 
         if self.processing is None:
-            self.processing = eventlet.spawn_after(1, self.process_messages)
+            self.processing = gevent.spawn_later(1, self.process_messages)
             self.processing.link(reset_processing)
 
     def send(self, message, priority=0):
@@ -131,7 +130,7 @@ class EMailManager(ComponentBase):
                 break
 
             log.trace("Messages waiting to be sent: %s", self.m_queue.qsize())
-            timeout = eventlet.Timeout(5, SendMessageTimeout())
+            timeout = gevent.Timeout(5, SendMessageTimeout())
             try:
                 self.q_prio, self.q_message = self.m_queue.get(block=False)
                 log.debug("Sending message to \"%s\"",
@@ -140,7 +139,7 @@ class EMailManager(ComponentBase):
                 self.m_queue.task_done()
                 self.q_prio = self.q_message = None
                 # Allow other things to run
-                eventlet.sleep(0)
+                gevent.sleep(0)
             except SendMessageTimeout:
                 log.debug("Sending message took too long. Requeing.")
                 self.m_queue.task_done()

@@ -8,14 +8,13 @@
     :license: BSD, see LICENSE for more details.
 """
 
-import eventlet
+import gevent
 import logging
 import errno
 from datetime import datetime
-from eventlet.green import socket
-from eventlet.support import get_errno
-from ircliblet.client import IRCClient
-from ircliblet.signals import on_motd, on_joined, on_connected, on_notice
+from gevent import socket
+from girclib.client import IRCClient
+from girclib.signals import on_motd, on_joined, on_connected, on_notice
 from ilog.web.forms import FormBase, _DBBoundForm
 from flask import flash, Markup
 from flaskext.babel import gettext as _
@@ -68,14 +67,14 @@ class Connectable(object):
         on_motd.connect(self.on_motd)
         on_notice.connect(self.on_notice)
 
-        timeout = eventlet.Timeout(self.timeout, ConnectTimeout())
+        timeout = gevent.Timeout(self.timeout, ConnectTimeout())
         log.trace("Attempting to connect to %s:%s", self.host, self.port)
         nick = "ILog-%s" % id(self)
         self.client = IRCClient(self.host, self.port, nick, nick, nick)
         try:
             self.client.connect()
             while not self.validated:
-                eventlet.sleep(0.5)
+                gevent.sleep(0.5)
                 log.trace("Sleeping")
         except ConnectTimeout:
             log.trace("Timeout while connecting to %s:%s", self.host, self.port)
@@ -84,21 +83,21 @@ class Connectable(object):
                 "Are the details correct?", host=self.host, port=self.port)
             )
         except Exception, err:
-            if get_errno(err) == errno.EHOSTUNREACH:
+            if err.errno == errno.EHOSTUNREACH:
                 log.trace("Wrong port number while connecting to %s:%s?",
                           self.host, self.port)
                 raise ValidationError(_(
                     "Could not establish a connection to %(host)s:%(port)s. "
                     "Is the port number correct?", host=self.host, port=self.port)
                 )
-            elif get_errno(err) == errno.ECONNREFUSED:
+            elif err.errno == errno.ECONNREFUSED:
                 log.trace("Connection refused while connecting to %s:%s",
                           self.host, self.port)
                 raise ValidationError(_(
                     "Could not establish a connection to %(host)s:%(port)s. "
                     "Connection refused!", host=self.host, port=self.port)
                 )
-            elif get_errno(err) in (socket.EAI_NODATA, socket.EAI_NONAME):
+            elif err.errno in (socket._socket.EAI_NODATA, socket._socket.EAI_NONAME):
                 log.trace("Wrong hostname while connecting to %s:%s?",
                           self.host, self.port)
                 raise ValidationError(_(

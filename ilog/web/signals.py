@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from ilog.common.evblinker import signal
+from ilog.common.signals import signal
 
 webapp_setup_complete = signal("webapp-setup-complete", """\
 Emitted once the web application has been fully configured.

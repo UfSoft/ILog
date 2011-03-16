@@ -20,12 +20,14 @@ log = logging.getLogger(__name__)
 
 main = Module(__name__, name='main')
 
+
 @nav_build.connect_via(main)
 def on_main_nav_build(emitter):
     return (
         # prio, endpoint, name, partial also macthes
         (0, 'main.libraries', _("Libraries"), False),
     )
+
 
 @nav_build.connect
 def on_global_nav_build(emitter):
@@ -34,9 +36,11 @@ def on_global_nav_build(emitter):
         (0, 'main.index', _("Home"), False),
     )
 
+
 @main.route('/')
 def index():
     return render_template('index.html')
+
 
 @main.route('/libraries')
 def libraries():
