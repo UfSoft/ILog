@@ -31,5 +31,5 @@ class GreenQueuePool(QueuePool):
                 gevent.sleep(0)
         finally:
             timeout.cancel()
-        return super(GreenQueuePool,self).do_get()
+        return super(GreenQueuePool, self).do_get()
 
