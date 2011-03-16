@@ -8,7 +8,8 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from .evblinker import signal
+from blinker import Namespace
+signal = Namespace().signal
 
 daemonized = signal("daemonized", """\
 Emitted once a daemon is daemonized.
