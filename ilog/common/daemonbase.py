@@ -81,7 +81,6 @@ class BaseDaemon(object):
             try:
                 self.uid = int(self.uid)
             except:
-                import pwd
                 pw = pwd.getpwnam(self.uid)
                 if pw:
                     self.uid = pw.pw_uid
@@ -89,7 +88,6 @@ class BaseDaemon(object):
             try:
                 self.gid = int(self.gid)
             except:
-                import grp
                 gp = grp.getgrnam(self.gid)
                 if gp:
                     self.gid = gp.gr_gid
