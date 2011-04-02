@@ -20,7 +20,7 @@ from flask.signals import request_started, request_finished
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
 from ilog.common.signals import running, shutdown
-from ilog.database import dbm
+from ilog.database import dbm, signals
 from ilog.web import defaults
 from .signals import webapp_setup_complete, webapp_shutdown, ctxnav_build, nav_build
 from .mail import mail
@@ -32,6 +32,7 @@ class Application(Flask):
         Flask.__init__(self, 'ilog.web')
         self.config.from_object(defaults)
         running.connect(self.on_running_signal)
+        signals.database_upgraded.connect(self.on_database_upgraded)
 
     def on_running_signal(self, emitter):
         try:
@@ -99,8 +100,8 @@ class Application(Flask):
         self.register_module(channels)
         self.register_module(networks)
 
+    def on_database_upgraded(self, emitter):
         # WebApp setup is complete. Signal it.
-        gevent.sleep(0.5)
         webapp_setup_complete.send(self)
 
     def shutdown(self):

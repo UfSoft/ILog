@@ -18,8 +18,8 @@ setup(name=ilog.__package_name__,
       description=ilog.__summary__,
       long_description=ilog.__description__,
       license=ilog.__license__,
-      platforms="OS Independent - Anywhere Flask, Eventlet and is known to run.",
-      keywords = "Eventlet ZMQ IRC Logging FLask",
+      platforms="Linux",
+      keywords = "Gevent ZMQ IRC Logging FLask",
       packages = find_packages(),
       include_package_data = True,
       package_data = {
@@ -38,6 +38,8 @@ setup(name=ilog.__package_name__,
         "Flask-Principal>=0.2.1",
         "Flask-WTF>=0.5.2",
         "pyzmq>=2.1.0,==2.1.0dev",
+        "procname",
+        "psi"
       ],
       extras_require = {
         "DEV": [
@@ -57,16 +59,18 @@ setup(name=ilog.__package_name__,
       },
       entry_points = """
       [console_scripts]
-      ilog-core = ilog.irc.daemon:start_daemon
-      ilog-bot  = ilog.irc.daemon:start_bot
-      ilog-web  = ilog.web.daemon:start_daemon
+      %s = ilog.irc.daemon:start_daemon
+      %s  = ilog.irc.daemon:start_bot
+      %s  = ilog.web.daemon:start_daemon
 
       [distutils.commands]
       compile = babel.messages.frontend:compile_catalog
       extract = babel.messages.frontend:extract_messages
          init = babel.messages.frontend:init_catalog
        update = babel.messages.frontend:update_catalog
-      """,
+      """ % (
+        ilog.__core_bin_name__, ilog.__bot_bin_name__, ilog.__web_bin_name__
+      ),
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Environment :: Web Environment',

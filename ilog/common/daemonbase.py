@@ -108,6 +108,7 @@ class BaseDaemon(object):
                            "Exiting..." % self.pidfile)
                     sys.exit(1)
             except NoSuchProcessError:
+                print 'no Such'
                 os.unlink(self.pidfile)
             except ImportError:
                 print ("Pidfile %r exists! Delete it and re-try. "

@@ -13,3 +13,8 @@ __email__        = 'pedro@algarvio.me'
 __license__      = 'BSD'
 __url__          = 'https://bitbucket.org/s0undt3ch/ilog'
 __description__  = __doc__
+
+
+__core_bin_name__  = 'ilog-core'
+__bot_bin_name__   = 'ilog-bot'
+__web_bin_name__   = 'ilog-web'
