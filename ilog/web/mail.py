@@ -13,7 +13,8 @@ import cPickle
 import logging
 import gevent
 from datetime import datetime
-from gevent.queue import Empty, PriorityQueue, Queue
+from gevent.pool import Pool
+from gevent.queue import Empty, JoinableQueue, PriorityQueue, Queue
 from flaskext.mail import Mail, Message as BaseMessage, email_dispatched
 from ilog.common import component_manager
 from ilog.common.interfaces import ComponentBase
@@ -28,7 +29,9 @@ class Message(BaseMessage):
 
     def get_response(self):
         response = BaseMessage.get_response(self)
-        response["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        response["Date"] = datetime.utcnow().strftime(
+            '%a, %d %b %Y %H:%M:%S +0000'
+        ).strip()
         return response
 
 class EMailManager(ComponentBase):
@@ -36,9 +39,10 @@ class EMailManager(ComponentBase):
     unsent_emails_pickle = 'unsent-emails.pickle'
 
     def activate(self):
-        self.m_queue = PriorityQueue()
+        self.pool = Pool()
+        self.m_queue = JoinableQueue()
         self.e_queue = Queue()
-        self.processing = self.q_prio = self.q_message = None
+        self.processing = self.q_message = None
 
     def connect_signals(self):
         email_dispatched.connect(self.on_email_dispatched)
@@ -47,21 +51,19 @@ class EMailManager(ComponentBase):
 
     def on_email_dispatched(self, message, app):
         log.trace("Email dispatched... %s", message)
-        self.q_message = self.q_prio = None
+        self.q_message = None
 
     def on_webapp_setup_complete(self, app):
         self.smtp = Mail(app)
         self.load_unsent_messages()
 
     def load_unsent_messages(self):
-        unsent_emails_count = 0
         try:
-            unsend_emails = cPickle.load(open(self.unsent_emails_pickle, 'rb'))
-            for priority, message in unsend_emails:
-                unsent_emails_count += 1
-                gevent.spawn_later(1, self.send, message, priority)
+            unsent_emails = cPickle.load(open(self.unsent_emails_pickle, 'rb'))
             log.debug("Loaded %s unsent emails from file backup",
-                      unsent_emails_count)
+                      len(unsent_emails))
+            for message in unsent_emails:
+                self.pool.spawn(self.send, message)
         except IOError:
             # File does not exist
             pass
@@ -77,16 +79,13 @@ class EMailManager(ComponentBase):
 
     def save_unsent_messages(self):
         unsent_messages = []
-        unsent_emails_count = 0
         if self.q_message:
-            unsent_messages.append((self.q_prio, self.q_message))
-            unsent_emails_count += 1
+            unsent_messages.append(self.q_message)
 
         while True:
             try:
-                priority, message = self.m_queue.get(block=False)
-                unsent_messages.append((priority, message))
-                unsent_emails_count += 1
+                message = self.m_queue.get(block=False)
+                unsent_messages.append(message)
             except Empty:
                 break
 
@@ -94,8 +93,7 @@ class EMailManager(ComponentBase):
         while True:
             try:
                 err, priority, message = self.e_queue.get(block=False)
-                unsent_messages.append((priority, message))
-                unsent_emails_count += 1
+                unsent_messages.append(message)
             except Empty:
                 break
 
@@ -116,11 +114,11 @@ class EMailManager(ComponentBase):
             self.processing = None
 
         if self.processing is None:
-            self.processing = gevent.spawn_later(1, self.process_messages)
+            self.processing = self.pool.spawn(self.process_messages)
             self.processing.link(reset_processing)
 
     def send(self, message, priority=0):
-        self.m_queue.put((priority, message), block=False)
+        self.m_queue.put(message, block=False)
         self.schedule_processing()
 
     def process_messages(self):
@@ -132,19 +130,19 @@ class EMailManager(ComponentBase):
             log.trace("Messages waiting to be sent: %s", self.m_queue.qsize())
             timeout = gevent.Timeout(5, SendMessageTimeout())
             try:
-                self.q_prio, self.q_message = self.m_queue.get(block=False)
+                self.q_message = self.m_queue.get(block=False)
                 log.debug("Sending message to \"%s\"",
                           ", ".join(self.q_message.send_to))
                 self.smtp.send(self.q_message)
                 self.m_queue.task_done()
-                self.q_prio = self.q_message = None
+                self.q_message = None
                 # Allow other things to run
                 gevent.sleep(0)
             except SendMessageTimeout:
                 log.debug("Sending message took too long. Requeing.")
                 self.m_queue.task_done()
-                self.m_queue.put((self.q_prio, self.q_message), block=False)
-                self.q_prio = self.q_message = None
+                self.m_queue.put(self.q_message, block=False)
+                self.q_message = None
             except Empty:
                 # No messages waiting to be sent. In case we're waiting for all
                 # messages to be send before shuting down, state that we're
@@ -153,9 +151,8 @@ class EMailManager(ComponentBase):
             except Exception, err:
                 log.exception(err)
                 self.m_queue.task_done()
-                self.e_queue.put((err, self.q_prio, self.q_message),
-                                 block=False)
-                self.q_prio = self.q_message = None
+                self.e_queue.put((err, self.q_message), block=False)
+                self.q_message = None
             finally:
                 timeout.cancel()
 
