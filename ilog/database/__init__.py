@@ -495,6 +495,7 @@ class DatabaseManager(ComponentBase):
             partial(_SignallingSession, self, autoflush=False, autocommit=False),
             scopefunc=greenlet_scope
         )
+
         gevent.spawn(self.upgrade_database)
 
     def on_database_upgraded(self, emitter):

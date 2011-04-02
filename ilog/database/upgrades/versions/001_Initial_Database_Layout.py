@@ -147,9 +147,16 @@ class Network(Model):
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
+    encoding      = dbm.Column(dbm.String(25))
+    features      = dbm.Column(dbm.PickleType)
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
+class NetworkMotd(Model):
+    __tablename__ = 'networks_motds'
+    network_id    = dbm.Column(dbm.ForeignKey("networks.id"), primary_key=True)
+    motd          = dbm.Column(dbm.String(30))
+    updated_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
 
 class Identity(Model):
     __tablename__ = 'identities'
@@ -178,6 +185,7 @@ class Channel(Model):
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
+    encoding      = dbm.Column(dbm.String(25))
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))

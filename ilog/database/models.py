@@ -15,6 +15,7 @@ from hashlib import md5, sha1
 from time import time
 from uuid import uuid4
 from sqlalchemy import orm
+from sqlalchemy.orm.interfaces import MapperExtension, EXT_CONTINUE
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -26,6 +27,89 @@ def gen_slug(name):
     return '-'.join(
         unicodedata.normalize('NFKD', name).encode('ascii','ignore').split()
     ).lower()
+
+
+#class AssureDecode(MapperExtension):
+#
+#    def __init__(self, *args, **kwargs):
+#        self.__attributes = kwargs.pop('attributes', [])
+#        self.__parentattr = self._get_parent_attr()
+#        MapperExtension.__init__(self, *args, **kwargs)
+#
+#    def _get_parent_attr(self):
+#        return ''
+#
+#    def _change_parent_encoding(self, parent_id, encoding):
+#        pass
+#
+#    def __assure(self, instance):
+#        parent = getattr(instance, self.__parentattr, None)
+#        print '\n\nPARENT', repr(parent), repr(self.__parentattr)
+#        if parent and hasattr(parent, 'encoding') and \
+#                                            getattr(parent, 'encoding', None):
+#            encoding = parent.encoding
+#        else:
+#            encoding = 'utf8'
+#        for name in self.__attributes:
+#            attribute = getattr(instance, name)
+#            if not isinstance(attribute, basestring):
+#                continue
+#            try:
+#                attribute.decode(encoding)
+#            except UnicodeDecodeError:
+#                try:
+#                    import chardet
+#                    detected = chardet.detect(attribute)
+#                    encoding = detected['encoding']
+#                    try:
+#                        setattr(instance, name, attribute.decode(encoding))
+#                    except UnicodeDecodeError:
+#                        pass
+#                except ImportError:
+#                    pass
+#        if parent and hasattr(parent, 'encoding'):
+#            if parent.encoding != encoding:
+#                print '\n\nSHOULD CHANGE PARENT ENC\n\n'
+##                import pprint
+##                pprint.pprint(parent.__dict__)
+##                pprint.pprint(parent.__dict__['_sa_instance_state'].__dict__)
+##                parent.encoding = encoding
+##                pprint.pprint(parent.__dict__)
+##                pprint.pprint(parent.__dict__['_sa_instance_state'].__dict__)
+##                dbm.session.merge(parent)
+###                self._change_parent_encoding(parent.id, encoding)
+#                import gevent
+#                gevent.spawn_later(1.5, self._change_parent_encoding, parent.id, encoding)
+#
+#
+#    def before_insert(self, mapper, connection, instance):
+#        import pprint
+#        print 'MAPPER'
+#        pprint.pprint(mapper.__dict__)
+#        self.__assure(instance)
+#        return EXT_CONTINUE
+#
+#    def before_update(self, mapper, connection, instance):
+#        print 'MAPPER', mapper.__dict__
+#        print 'CONNECTION', connection.__dict__
+#        self.__assure(instance)
+#        return EXT_CONTINUE
+#
+#
+#class MOTDDecode(AssureDecode):
+#
+#    def _get_parent_attr(self):
+#        return 'network'
+#
+#    def _change_parent_encoding(self, parent_id, encoding):
+#        print '\n\nCHANGE PARENT ENC'
+##        network = dbm.session.query(Network).get(parent_id)
+#        network = Network.query.get(parent_id)
+#        if network:
+#            network.encoding = encoding
+#            dbm.session.commit()
+#            print 'CHANGEd PARENT ENC\n\n'
+
 
 class SchemaVersion(dbm.Model):
     """SQLAlchemy-Migrate schema version control table."""
@@ -262,7 +346,7 @@ class NetworkQuery(BaseQuery):
     def get(self, slug_or_id):
         if isinstance(slug_or_id, basestring):
             return self.filter(Network.slug==slug_or_id).first()
-        return orm.Query.get(slug_or_id)
+        return BaseQuery.get(self, slug_or_id)
 
 class Network(dbm.Model):
     __tablename__ = 'networks'
@@ -273,23 +357,46 @@ class Network(dbm.Model):
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
+    encoding      = dbm.Column(dbm.String(25))
+    features      = dbm.Column(dbm.PickleType)
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
 
-    created_by    = dbm.relation("Account", backref="networks", lazy=True,
-                                 cascade='all, delete')
+    created_by    = dbm.relation("Account", backref="networks", lazy=True)
+
+    motd          = dbm.relation("NetworkMotd", backref="network", lazy=True,
+                                 uselist=False, cascade='all, delete')
     channels      = dbm.dynamic_loader("Channel", backref="network",
                                        cascade='all, delete, delete-orphan')
 
     query_class   = NetworkQuery
 
-    def __init__(self, name, host, port=6667, slug=None):
-        if not slug:
-            slug = gen_slug(name)
-        self.slug = slug
+    def __init__(self, name, host, port=6667, slug=None, encoding=None):
         self.name = name
         self.host = host
         self.port = port
+        if not slug:
+            slug = gen_slug(name)
+        self.slug = slug
+        self.encoding = encoding
+
+
+class NetworkMotd(dbm.Model):
+    __tablename__ = 'networks_motds'
+#    __mapper_args__ = {
+#        'extension': MOTDDecode(attributes=['motd'])
+#    }
+
+    network_id    = dbm.Column(dbm.ForeignKey("networks.id"), primary_key=True)
+    motd          = dbm.Column(dbm.Text)
+    updated_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
+
+    def __init__(self, motd):
+        self.motd = motd
+
+    def update(self, motd):
+        self.motd = motd
+        self.updated_on = datetime.utcnow()
 
 
 class Identity(dbm.Model):
@@ -331,6 +438,7 @@ class Channel(dbm.Model):
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
+    encoding      = dbm.Column(dbm.String(25))
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
@@ -345,7 +453,8 @@ class Channel(dbm.Model):
 
     query_class   = ChannelQuery
 
-    def __init__(self, name, slug=None, prefix=None, key=None):
+
+    def __init__(self, name, slug=None, prefix=None, key=None, encoding=None):
         if not prefix and name[0] in "#&":
             prefix = name[0]
             name = name[1:]
@@ -358,6 +467,11 @@ class Channel(dbm.Model):
         self.name = name
         self.prefix = prefix
         self.key = key
+        self.encoding = encoding
+
+    def __repr__(self):
+        return '<Channel "%s" on "%s">' % (self.prefixed_name,
+                                           self.network.name)
 
     @property
     def prefixed_name(self):
