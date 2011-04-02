@@ -6,6 +6,14 @@
   {{ render_field(form.host, {'size': 20}) }}
   {{ render_field(form.port, {'size': 6}) }}
   {{ render_field(form.slug, {'size': 20}) }}
+  {{ render_field(form.encoding, {'size': 20}) }}
+  {% if form.db_entry.motd %}
+  <fieldset class="ui-corner-all">
+    <legend>MOTD</legend>
+    <pre>{{ form.db_entry.motd.motd }}</pre>
+    <p>Last updated on: {{ form.db_entry.motd.updated_on | datetimeformat }}</p>
+  </fieldset>
+  {% endif %}
   <div class="flash-message ui-state-highlight ui-corner-all">
     <p>
       <strong>{% trans %}Note:{% endtrans %}</strong>

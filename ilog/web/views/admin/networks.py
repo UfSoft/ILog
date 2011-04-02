@@ -11,10 +11,13 @@
 
 from flask import Module, request, url_for, render_template, flash, g
 from flaskext.babel import gettext as _
+from ilog.common import convert
 from ilog.database import dbm
-from ilog.database.models import Group, Network, Privilege
+from ilog.database.models import Group, Network, NetworkMotd, Privilege
 from ilog.web.application import redirect_to, redirect_back
-from ilog.web.permissions import admin_permission, manager_permission, admin_or_manager_permission, require_permissions
+from ilog.web.permissions import (admin_permission, manager_permission,
+                                  admin_or_manager_permission,
+                                  require_permissions)
 from ilog.web.signals import ctxnav_build, nav_build
 from ilog.web.views.admin.forms import AddNetwork, DeleteNetwork, EditNetwork
 
@@ -53,14 +56,26 @@ def index(page=1):
 def add():
     form = AddNetwork(formdata=request.values.copy())
     if form.validate_on_submit():
+        print 'create'
         network = Network(name=form.data.get('name'),
                           host=form.data.get('host'),
                           port=form.data.get('port'))
+        if form.isupport_options is not None:
+            network.features = form.isupport_options
+
+        if form.motd is not None:
+            encoding, motd = convert.to_unicode(form.motd)
+            network.motd = NetworkMotd(motd)
+            network.encoding = encoding
+
 
         account = g.identity.account
         group = Group.query.get("manager")
         account.groups.add(group)
-        account.privileges.add(Privilege("manage-%s" % network.slug))
+        privilege = Privilege.query.get("manage-%s" % network.slug)
+        if not privilege:
+            privilege = Privilege("manage-%s" % network.slug)
+        account.privileges.add(privilege)
 
         network.created_by = account
         dbm.session.add(network)
@@ -79,6 +94,8 @@ def edit(slug=None):
         return redirect_back('admin.networks.index')
 
     network = Network.query.get(slug)
+    if not network:
+        return redirect_back("admin.networks.index")
 
     form = EditNetwork(network, request.values.copy())
     if form.validate_on_submit():
@@ -91,7 +108,7 @@ def edit(slug=None):
         return redirect_to("admin.networks.index")
     return render_template('admin/networks/edit.html', form=form)
 
-@networks.route('/delete/<slug>')
+@networks.route('/delete/<slug>', methods=('POST', 'GET'))
 @require_permissions(admin_permission, http_exception=403)
 def delete(slug=None):
     if 'cancel' in request.values:
@@ -100,11 +117,12 @@ def delete(slug=None):
     network = Network.query.get(slug)
     form = DeleteNetwork(network, request.values.copy())
     if form.validate_on_submit():
-        manage_privilege = Privilege.query.get("manage-%" % network.slug)
+        manage_privilege = Privilege.query.get("manage-%s" % network.slug)
         if manage_privilege:
-            dbm.session.delete(manage_privilege)
-        flash(_("Network \"%(name)s\" deleted.", name=network.name))
+            g.identity.account.privileges.remove(manage_privilege)
+        network_name = network.name
         dbm.session.delete(network)
         dbm.session.commit()
+        flash(_("Network \"%(name)s\" deleted.", name=network_name))
         return redirect_to("admin.networks.index")
     return render_template('admin/networks/delete.html', form=form)
