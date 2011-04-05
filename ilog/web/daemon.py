@@ -14,6 +14,7 @@ gevent.monkey.patch_all()
 from gevent import wsgi, pool
 
 import logging
+from ilog import __web_bin_name__
 from ilog.common.daemonbase import BaseDaemon, BaseOptionParser
 
 class FilelikeLogger(object):
@@ -60,7 +61,8 @@ class Daemon(BaseDaemon):
                   pidfile=options.pidfile, logfile=options.logfile,
                   detach_process=options.detach_process, uid=options.uid,
                   gid=options.gid, working_directory=options.working_dir,
-                  loglevel=options.loglevel, use_reloader=options.use_reloader)
+                  loglevel=options.loglevel, use_reloader=options.use_reloader,
+                  process_name=__web_bin_name__)
         return cli.run_daemon()
 
     def run(self):

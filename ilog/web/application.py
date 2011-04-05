@@ -34,15 +34,21 @@ class Application(Flask):
         running.connect(self.on_running_signal)
         signals.database_upgraded.connect(self.on_database_upgraded)
 
-    def on_running_signal(self, emitter):
+    def on_running_signal(self, daemon):
+        self.config.root_path = daemon.working_directory
+        custom_config_file_name = "ilogwebconfig.py"
         try:
-            sys.path.insert(0, os.getcwd())
-            import ilogwebconfig
-            log.info("Found \"ilogwebconfig.py\" on %s",
-                     os.path.abspath(os.path.dirname(ilogwebconfig.__file__)))
-            self.config.from_object(ilogwebconfig)
-        except ImportError:
-            log.info("No \"ilogwebconfig.py\" found. Using default configuration.")
+            custom_config_file = os.path.join(
+                self.config.root_path, custom_config_file_name
+            )
+
+            if os.path.isfile(custom_config_file):
+                self.config.from_pyfile(custom_config_file)
+                log.info("Loaded custom configuration from %r",
+                         custom_config_file)
+        except IOError:
+            log.info("No %r found. Using default configuration.",
+                     custom_config_file_name)
         self.logger_name = '.'.join([__name__, 'SERVER'])
 
         theme_name = self.config.get("THEME_NAME", None)

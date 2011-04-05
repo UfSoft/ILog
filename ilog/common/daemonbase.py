@@ -8,12 +8,17 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import gevent.monkey
+gevent.monkey.patch_all()
+
 import os
 import sys
 import errno
 import signal
 import pwd
 import grp
+import psi.process
+from psi.process import NoSuchProcessError
 from os import path
 from optparse import OptionParser
 from ilog import __version__, __package_name__
@@ -48,10 +53,11 @@ class BaseDaemon(object):
 
     def __init__(self, working_directory=os.getcwd(), pidfile=None,
                  detach_process=True, uid=None, gid=None, logfile=None,
-                 loglevel="info"):
+                 loglevel="info", process_name=None):
 
         self.__pid = None
         self.__exiting = False
+        self.process_name = process_name
 
         self.working_directory = working_directory
 
@@ -97,23 +103,24 @@ class BaseDaemon(object):
             return
         if os.path.isfile(self.pidfile):
             try:
-                import psi.process
-                from psi.process import NoSuchProcessError
                 pid = int(open(self.pidfile, 'r').read())
                 process = psi.process.Process(pid=pid)
-                if 'ilog-' in process.command:
-                    os.unlink(self.pidfile)
-                else:
-                    print ("Pidfile %r exists! Delete it and re-try. "
-                           "Exiting..." % self.pidfile)
+                if self.process_name in process.args:
+                    print('Instance already running with pidfile %d' %
+                          process.pid)
                     sys.exit(1)
+                else:
+                    os.unlink(self.pidfile)
             except NoSuchProcessError:
-                print 'no Such'
                 os.unlink(self.pidfile)
-            except ImportError:
-                print ("Pidfile %r exists! Delete it and re-try. "
-                       "Exiting..." % self.pidfile)
-                sys.exit(1)
+            for process in psi.process.ProcessTable().values():
+                if process.pid == os.getpid():
+                    # This is us, continue
+                    continue
+                if self.process_name in process.args:
+                    print('Instance already running with pidfile %d' %
+                          process.pid)
+                    sys.exit(1)
 
     def write_pid(self):
         if not self.pidfile:
@@ -209,6 +216,12 @@ class BaseDaemon(object):
         self.change_working_dir()
         self.drop_privileges()
         self.write_pid()
+        if self.process_name:
+            try:
+                import procname
+                procname.setprocname(self.process_name)
+            except ImportError:
+                pass
         signal.signal(signal.SIGTERM, self._exit)   # Terminate
         signal.signal(signal.SIGINT, self._exit)    # Interrupt
         try:
