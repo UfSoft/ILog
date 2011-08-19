@@ -16,9 +16,11 @@ from urlparse import urlparse, urljoin
 from flask import Flask, flash, g, redirect, url_for, request, session, Markup
 from flask.signals import request_started, request_finished
 
-# Now the usefull imports
+# Now the useful imports
+from flaskext import menubuilder
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
+from flaskext.menubuilder import MenuBuilder, MenuItemContent
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm, signals
 from ilog.web import defaults
@@ -35,17 +37,20 @@ class Application(Flask):
         signals.database_upgraded.connect(self.on_database_upgraded)
 
     def on_running_signal(self, daemon):
+        log.trace("Got running signal")
         self.config.root_path = daemon.working_directory
         custom_config_file_name = "ilogwebconfig.py"
         try:
             custom_config_file = os.path.join(
-                self.config.root_path, custom_config_file_name
+                os.path.abspath(self.config.root_path), custom_config_file_name
             )
 
             if os.path.isfile(custom_config_file):
                 self.config.from_pyfile(custom_config_file)
                 log.info("Loaded custom configuration from %r",
                          custom_config_file)
+            else:
+                log.info("%s not found", custom_config_file)
         except IOError:
             log.info("No %r found. Using default configuration.",
                      custom_config_file_name)
@@ -99,12 +104,12 @@ class Application(Flask):
         from .views.admin.accounts import accounts
         from .views.admin.channels import channels
         from .views.admin.networks import networks
-        self.register_module(main)
-        self.register_module(account)
-        self.register_module(admin)
-        self.register_module(accounts)
-        self.register_module(channels)
-        self.register_module(networks)
+        self.register_blueprint(main)
+        self.register_blueprint(account)
+        self.register_blueprint(admin)
+        self.register_blueprint(accounts)
+        self.register_blueprint(channels)
+        self.register_blueprint(networks)
 
     def on_database_upgraded(self, emitter):
         # WebApp setup is complete. Signal it.
@@ -178,6 +183,7 @@ config = app.config
 cache = Cache(app)
 babel = Babel(app, default_locale='en', default_timezone='UTC',
               date_formats=None, configure_jinja=True)
+menus = menubuilder.MenuBuilder(app)
 
 @babel.localeselector
 def get_locale():
@@ -215,75 +221,69 @@ def on_403(error):
     return redirect_back('main.index', code=307)
 
 
+def check_wether_account_is_none(menu_item):
+    return g.identity.account is None
+
+def check_wether_account_is_not_none(menu_item):
+    return g.identity.account is not None
+
+menus.add_menu_entry(
+    "account_nav", _("Sign-In"), 'account.signin', priority=-1,
+    classes="first", li_classes="first",
+    visiblewhen=check_wether_account_is_none
+)
+menus.add_menu_entry(
+    "account_nav", _("Register"), 'account.register',
+    visiblewhen=check_wether_account_is_none
+)
+
+menus.add_menu_entry(
+    "account_nav", _("Sign-Out"), 'account.signout', priority=-1,
+    classes="first", li_classes="first",
+    visiblewhen=check_wether_account_is_not_none
+)
+menus.add_menu_entry(
+    "account_nav", _("My Profile"), 'account.profile',
+    visiblewhen=check_wether_account_is_not_none
+)
+def check_for_admin_or_manager_permission(menu_item):
+    from .permissions import admin_or_manager_permission
+    return g.identity.can(admin_or_manager_permission)
+
+menus.add_menu_entry(
+    "account_nav", _("Administration"), 'admin.dashboard', priority=10,
+    visiblewhen=check_for_admin_or_manager_permission
+)
+
 # Account Navigation building
 @app.context_processor
 def process_context():
     from .permissions import admin_permission, admin_or_manager_permission
-    account_nav = []
-    if g.identity.account is None:
-        profile_photo = None
-        account_nav.append((url_for('account.signin'), _("Sign-In"), "first"))
-        account_nav.append((url_for('account.register'), _("Register"), None))
-    else:
-        account_nav.append((url_for('account.signout'), _("Sign-Out"), "first"))
-        account_nav.append((url_for('account.profile'), _("My Profile"), None))
 
-        if not g.identity.account.confirmed and not \
-                                session.get('_skip_verified_warning', False):
-            message = Markup("You're account is not yet verified! "
-                             "<a href=\"%s\">Resend confirmation email</a>." %
-                             url_for('account.resend_activation_email'))
-            flash(message, "error")
-
-        profile_photo = g.identity.account.profile_photos.filter_by(
-                                                        preferred=True).first()
-
-    if g.identity.can(admin_or_manager_permission):
-        account_nav.append(
-            (url_for('admin.dashboard'), _("Administration"), None)
+    if g.identity.account is not None and not menus.has_item_by_id('profile_photo', 'account_nav'):
+        profile_photo = g.identity.account.profile_photos.filter_by(preferred=True).first()
+        profile_photo_menuitem = menubuilder.MenuItemContent(
+            '<img width="22" height="22" src="%s">' % profile_photo.url,
+            _("My Profile"), priority=-2, id='profile_photo',
+            activewhen=menubuilder.ANYTIME,
+            visiblewhen=lambda mi: g.identity.account is not None,
+            li_classes="first", classes="first", builder=menus.builder, is_link=False
         )
+        menus.add_menu_item('account_nav', profile_photo_menuitem)
 
-    @cache.memoize(3600)
-    def construct_nav(module=None, identity_name="anon", url_path=None):
-        participant_results = []
-        for participant, nav_entry in nav_build.send(module):
-            if not nav_entry:
-                continue
-            for prio, endpoint, name, partial in nav_entry:
-                participant_results.append((prio, name, endpoint, partial))
-        for (prio, name, endpoint, partial) in sorted(participant_results):
-            url = url_for(endpoint)
-            if request.path==url or (partial and request.path.startswith(url)):
-                yield url, name, "active"
-            else:
-                yield url, name, "inactive"
 
-    @cache.memoize(3600)
-    def construct_ctxnav(module=None, identity_name="anon", url_path=None):
-        participant_results = []
-        for participant, nav_entry in ctxnav_build.send(module):
-            if not nav_entry:
-                continue
-            for prio, endpoint, name, partial in nav_entry:
-                participant_results.append((prio, name, endpoint, partial))
-        for (prio, name, endpoint, partial) in sorted(participant_results):
-            url = url_for(endpoint)
-            if request.path==url or (partial and request.path.startswith(url)):
-                yield url, name, "active"
-            else:
-                yield url, name, "inactive"
+    if g.identity.account is not None and \
+                            not g.identity.account.confirmed and not \
+                            session.get('_skip_verified_warning', False):
+        message = Markup("You're account is not yet verified! "
+                         "<a href=\"%s\">Resend confirmation email</a>." %
+                         url_for('account.resend_activation_email'))
+        flash(message, "error")
 
     return dict(
+        app = app,
         theme_name = app.config.get("THEME_NAME", 'smoothness'),
-        account_nav=tuple(account_nav),
-        profile_photo=profile_photo,
-        request_path=request.path,
-        nav=construct_nav(
-            app.modules[request.module], g.identity.name, request.path
-        ),
-        ctxnav=construct_ctxnav(
-            app.modules[request.module], g.identity.name, request.path
-        ),
+        request_path=request.path
     )
 
 @app.context_processor
@@ -326,7 +326,7 @@ def get_total_events():
 
 @request_started.connect_via(app)
 def on_request_started(app):
-    if request.path.startswith(app.static_path):
+    if request.path.startswith(app.static_url_path):
         return
 
     @cache.cached(timeout=3600, key_prefix='no_warning_urls')
@@ -347,7 +347,7 @@ def on_request_started(app):
 
 @request_finished.connect_via(app)
 def on_request_finished(app, response):
-    if request.path.startswith(app.static_path):
+    if request.path.startswith(app.static_url_path):
         return
 
     if response.status_code not in range(300+1, 307+1):

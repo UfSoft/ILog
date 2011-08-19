@@ -10,32 +10,26 @@
 
 import logging
 from operator import itemgetter
-from flask import Module, render_template, request
+from flask import Blueprint, render_template, request
 from flaskext.babel import gettext as _
 from ilog.database import dbm
-from ilog.web.application import app, url_for
+from ilog.web.application import app, url_for, menus
 from ilog.web.signals import nav_build, ctxnav_build
 
 log = logging.getLogger(__name__)
 
-main = Module(__name__, name='main')
+main = Blueprint('main', __name__)
 
+def request_enpoint_matches_menuitem_endpoint(menu_item):
+    return request.endpoint==menu_item.endpoint
 
-@nav_build.connect_via(main)
-def on_main_nav_build(emitter):
-    return (
-        # prio, endpoint, name, partial also macthes
-        (0, 'main.libraries', _("Libraries"), False),
-    )
-
-
-@nav_build.connect
-def on_global_nav_build(emitter):
-    return (
-        # prio, endpoint, name, partial also macthes
-        (0, 'main.index', _("Home"), False),
-    )
-
+menus.add_menu_entry(
+    'nav', _("Home"), 'main.index', priority=-100
+)
+menus.add_menu_entry(
+    'nav', _("Libraries"), 'main.libraries',
+    visiblewhen=lambda mi: request.blueprint=='main'
+)
 
 @main.route('/')
 def index():

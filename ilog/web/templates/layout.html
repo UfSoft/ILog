@@ -5,35 +5,24 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
     <meta charset="utf-8">
-    <link rel="icon" type="image/ico" href="{{ url_for('.static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/ico" href="{{ url_for('static', filename='favicon.ico') }}">
     <link class="ui-theme" rel="stylesheet" type="text/css"
-          href="{{ url_for('.static', filename='ext/%s/jquery-ui.custom.css' % theme_name ) }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='default.css') }}">
+          href="{{ url_for('static', filename='ext/%s/jquery-ui.custom.css' % theme_name ) }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='default.css') }}">
     <link class="ui-theme" rel="stylesheet" type="text/css"
-          href="{{ url_for('.static', filename='%s.css' % theme_name ) }}">
-    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-1.4.3.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('.static', filename='ext/jquery.corner.js') }}"></script>
+          href="{{ url_for('static', filename='%s.css' % theme_name ) }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-1.4.3.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery.corner.js') }}"></script>
 
     {% block head %}
-        <title>{% block title %}Welcome{% endblock %} &mdash; ILog</title>
+        <title>ILog &mdash; {% block title %}Welcome{% endblock %}</title>
     {% endblock %}
   </head>
   <body class="ui-widget-content">
     <div id="container">
       <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
-        <ul>
-          {% if profile_photo -%}
-          <li class="first active">
-            <img width="22" height="22" src="{{ profile_photo.url }}">
-          </li>
-          {%- endif %}
-          {% for url, name, class in account_nav %}
-            <li{% if class %} class="{{class}}"{% endif %}>
-              <a href="{{ url }}">{{ name }}</a>
-            </li>
-          {% endfor %}
-        </ul>
+        {{ app.menubuilder.render('account_nav', 'ul') }}
       </div>
       <div id="header-logo">
         <span class="name">IRC Logging Network</span><br/>
@@ -45,18 +34,14 @@
           {{- total_networks_logged -}}
         </span> networks</span>
       </div>
-      {% if nav -%}
+      {% if app.menubuilder.has_menu('nav') -%}
       <div id="nav" class="ui-widget-header ui-corner-all">
-        {% for url, name, class in nav %}
-        <a href="{{ url }}" class="{{ class }}">{{ name }}</a>
-        {% endfor %}
+        {{ app.menubuilder.render('nav', 'ul') }}
       </div>
       {%- endif %}
-      {% if ctxnav -%}
+      {% if app.menubuilder.has_menu('ctxnav') -%}
       <div id="ctxnav">
-        {% for url, name, class in ctxnav %}
-        <a href="{{ url }}" class="{{ class }}">{{ name }}</a>
-        {% endfor %}
+        {{ app.menubuilder.render('ctxnav', 'ul') }}
       </div>
       {%- endif %}
 
@@ -76,8 +61,8 @@
     </div>
     <script type="text/javascript">
       $('#nav,#ctxnav').buttonset();
-      $('#ctxnav>a:first').removeClass('ui-corner-left').addClass('ui-corner-bl');
-      $('#ctxnav>a:last').removeClass('ui-corner-right').addClass('ui-corner-br');
+      //$('#ctxnav>ul>li>a:first').removeClass('ui-corner-left').addClass('ui-corner-bl');
+      //$('#ctxnav>ul>li>a:last').removeClass('ui-corner-right').addClass('ui-corner-br');
     </script>
     {% block footer %}{% endblock %}
   </body>

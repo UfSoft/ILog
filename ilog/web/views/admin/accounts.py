@@ -8,21 +8,51 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Module, request, url_for, render_template
+from flask import Blueprint, request, g, render_template
 from flaskext.babel import gettext as _
-from ilog.web.signals import ctxnav_build, nav_build
+from ilog.web.application import menus
+from ilog.web.permissions import admin_permission
+from ilog.web.views.admin import check_for_admin
 
-accounts = Module(__name__, name="admin.accounts", url_prefix="/admin/accounts")
+accounts = Blueprint("admin.accounts", __name__, url_prefix="/admin/accounts")
 
-@ctxnav_build.connect_via(accounts)
-def on_accounts_ctxnav_build(emitter):
-        return (
-            # prio, endpoint, name, partial also macthes
-            (1, 'admin.accounts.index', _("List Accounts"), False),
-            (2, 'admin.accounts.add', _("Add Accounts"), False),
-            (3, 'admin.accounts.edit', _("Edit Accounts"), False),
-            (4, 'admin.accounts.delete', _("Delete Accounts"), False),
-        )
+def check_for_admin(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_permission) and
+            (request.blueprint=='admin' or request.blueprint.startswith('admin.')))
+
+def check_for_admin_and_blueprint(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_permission) and
+            request.blueprint=='admin.accounts')
+
+
+def request_endpoint_startswith_admin_accounts(menu_item):
+    return request.blueprint=='admin.accounts'
+
+menus.add_menu_entry(
+    'nav', _("Accounts"), 'admin.accounts.index',
+    activewhen=request_endpoint_startswith_admin_accounts,
+    visiblewhen=check_for_admin, classes="admin"
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("List Accounts"), 'admin.accounts.index',
+    visiblewhen=check_for_admin_and_blueprint, classes="admin"
+)
+menus.add_menu_entry(
+    'ctxnav', _("Add Accounts"), 'admin.accounts.add',
+    visiblewhen=check_for_admin_and_blueprint, classes="admin"
+)
+menus.add_menu_entry(
+    'ctxnav', _("Edit Accounts"), 'admin.accounts.edit',
+    visiblewhen=check_for_admin_and_blueprint, classes="admin"
+)
+menus.add_menu_entry(
+    'ctxnav', _("Delete Accounts"), 'admin.accounts.delete',
+    visiblewhen=check_for_admin_and_blueprint, classes="admin"
+)
+
 
 @accounts.route('/')
 def index():

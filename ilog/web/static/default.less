@@ -165,7 +165,6 @@ a:hover, .ui-state-default a:hover {
   }
 }
 
-
 #nav.ui-buttonset .ui-button, #ctxnav.ui-buttonset .ui-button {
   margin-right: -0.7em;
   text-shadow: 1px 1px 1px #444;
@@ -191,18 +190,51 @@ a:hover, .ui-state-default a:hover {
   margin: 10px 15px 0 10px;
   .ui-widget { font-size: 12px; }
 
-  -moz-box-shadow: 1px 6px 10px #888888;
-  -webkit-box-shadow: 1px 6px 10px #888888;
-  box-shadow: 1px 6px 10px #888888;
+  .drop-shadow;
+
+  ul {
+    display: inline;
+    margin: 0;
+    padding: 0px;
+
+    li {
+      display: inline;
+      list-style-type: none;
+      margin: 0;
+      padding: 2px 0 0 0;
+      vertical-align: middle;
+    }
+    /*li.active {
+      padding-top: 6px;
+    }*/
+  }
 }
 
 #ctxnav {
   .navigation_items;
-  margin: 0px 5px 10px 30px;
+  margin: -3px 5px 10px 30px;
   padding: 0 4px 3px 4px;
-  .ui-widget { font-size: 11px; border-top: 1px solid #AAA; }
-  a, a:visited {
-    .drop-shadow;
+  .ui-widget {
+    font-size: 11px;
+    /*border-top: 1px solid #AAA;*/
+  }
+
+  ul {
+    display: inline;
+    margin: 0;
+    padding: 0px;
+
+    li {
+      display: inline;
+      list-style-type: none;
+      margin: 0;
+      padding: 0 0 6px 0;
+      vertical-align: middle;
+
+      a, a:visited {
+        .drop-shadow;
+      }
+    }
   }
 }
 

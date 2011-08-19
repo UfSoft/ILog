@@ -82,8 +82,12 @@ class Daemon(BaseDaemon):
             import werkzeug.serving
             start_serving = werkzeug.serving.run_with_reloader(start_serving)
 
+#        running
+        logging.getLogger(__name__).info("before spawning serve")
         serve = gevent.spawn(start_serving)
+        logging.getLogger(__name__).info("after spawning serve")
         running.send(self)
+        logging.getLogger(__name__).info("running signal sent")
 
         serve.join()
 #        while True:

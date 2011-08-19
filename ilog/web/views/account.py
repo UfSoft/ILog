@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     ilog.web.views.account
-    ~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~
 
 
     :copyright: © 2011 UfSoft.org - :email:`Pedro Algarvio (pedro@algarvio.me)`
@@ -13,13 +13,14 @@ import gevent
 import simplejson
 import urllib
 import urllib2
-from flask import Module, url_for, g, flash, request, session, render_template
+from flask import Blueprint, url_for, g, flash, request, session, render_template
+from flaskext import menubuilder
 from flaskext.babel import gettext as _
 from flaskext.principal import AnonymousIdentity, Identity, identity_changed
 from ilog.database import dbm
 from ilog.database.models import (Account, AccountProvider, EMailAddress,
                                   ActivationKey, ProfilePhoto)
-from ilog.web.application import app, config, redirect_to, redirect_back
+from ilog.web.application import app, config, menus, redirect_to, redirect_back
 from ilog.web.forms import (DeleteAccountForm, LoginForm, RegisterForm,
                             ProfileForm, ExtraEmailForm)
 from ilog.web.mail import mail, Message
@@ -28,23 +29,43 @@ from ilog.web.signals import ctxnav_build, nav_build
 
 log = logging.getLogger(__name__)
 
-account = Module(__name__, name="account", url_prefix='/account')
+account = Blueprint("account", __name__, url_prefix='/account')
 
-@nav_build.connect_via(account)
-def on_account_nav_build(emitter):
-    return (
-        # prio, endpoint, name, partial also macthes
-        (10, 'account.profile', _("My Profile"), True),
-    )
+def check_wether_account_is_not_none(menu_item):
+    return g.identity.account is not None and request.blueprint=='account'
 
-@ctxnav_build.connect_via(account)
-def on_networks_ctxnav_build(emitter):
-    return (
-        # prio, endpoint, name, partial also macthes
-        (1, 'account.profile', _("Profile Details"), False),
-        (2, 'account.formats', _("Date & Time Formats"), False),
-        (2, 'account.photos', _("Profile Photos"), False),
-    )
+def request_endpoint_startswith_accounts(menu_item):
+    return request.blueprint=='account' and request.endpoint.startswith('account.')
+
+menus.add_menu_entry(
+    'nav', _("My Profile"), 'account.profile',
+    activewhen=request_endpoint_startswith_accounts,
+    visiblewhen=check_wether_account_is_not_none
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("Profile Details"), 'account.profile',
+    visiblewhen=check_wether_account_is_not_none
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("Date & Time Formats"), 'account.formats', priority=2,
+    visiblewhen=check_wether_account_is_not_none
+)
+menus.add_menu_entry(
+    'ctxnav', _("Profile Photos"), 'account.photos', priority=2,
+    visiblewhen=check_wether_account_is_not_none
+)
+
+#
+#@ctxnav_build.connect_via(account)
+#def on_networks_ctxnav_build(emitter):
+#    return (
+#        # prio, endpoint, name, partial also macthes
+#        (1, 'account.profile', _("Profile Details"), False),
+#        (2, 'account.formats', _("Date & Time Formats"), False),
+#        (2, 'account.photos', _("Profile Photos"), False),
+#    )
 
 @account.route('/signin', methods=("GET", "POST"))
 def signin():
@@ -399,9 +420,11 @@ def delete_account():
 @account.route('/photos', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def photos():
+    return render_template('account/photos.html')
     raise NotImplementedError()
 
-@account.route('/photos', methods=('GET', 'POST'))
+@account.route('/formats', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def formats():
+    return render_template('account/formats.html')
     raise NotImplementedError()

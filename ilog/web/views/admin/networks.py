@@ -9,30 +9,49 @@
 """
 
 
-from flask import Module, request, url_for, render_template, flash, g
+from flask import Blueprint, request, url_for, render_template, flash, g
 from flaskext.babel import gettext as _
 from ilog.common import convert
 from ilog.database import dbm
 from ilog.database.models import Group, Network, NetworkMotd, Privilege
-from ilog.web.application import redirect_to, redirect_back
+from ilog.web.application import menus, redirect_to, redirect_back
 from ilog.web.permissions import (admin_permission, manager_permission,
                                   admin_or_manager_permission,
                                   require_permissions)
 from ilog.web.signals import ctxnav_build, nav_build
 from ilog.web.views.admin.forms import AddNetwork, DeleteNetwork, EditNetwork
 
-networks = Module(__name__, name="admin.networks", url_prefix="/admin/networks")
+networks = Blueprint("admin.networks", __name__, url_prefix="/admin/networks")
 
 
-@ctxnav_build.connect_via(networks)
-def on_networks_ctxnav_build(emitter):
-    if request.path.startswith(url_for('admin.networks.index')):
-        return (
-            # prio, endpoint, name, partial also macthes
-            (1, 'admin.networks.index', _("List Networks"), False),
-            (2, 'admin.networks.add', _("Add Network"), False),
-        )
+def check_for_admin_or_manager(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_or_manager_permission) and
+            (request.blueprint=='admin' or request.blueprint.startswith('admin.')))
 
+def check_for_admin_or_manager_and_blueprint(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_or_manager_permission) and
+            request.blueprint=='admin.networks')
+
+
+def request_endpoint_startswith_admin_accounts(menu_item):
+    return request.blueprint=='admin.networks'
+
+menus.add_menu_entry(
+    'nav', _("Networks"), 'admin.networks.index',
+    activewhen=request_endpoint_startswith_admin_accounts,
+    visiblewhen=check_for_admin_or_manager, classes="admin"
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("List Networks"), 'admin.networks.index',
+    visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
+)
+menus.add_menu_entry(
+    'ctxnav', _("Add Networks"), 'admin.networks.add', priority=1,
+    visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
+)
 
 @networks.route('/', defaults={'page': 1})
 @networks.route('/page/<int:page>')

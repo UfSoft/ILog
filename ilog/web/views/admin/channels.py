@@ -8,27 +8,45 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import Module, request, url_for, render_template, g, flash
+from flask import Blueprint, request, url_for, render_template, g, flash
 from flaskext.babel import gettext as _
 from ilog.database import dbm
 from ilog.database.models import Channel, Group, Network, Privilege
-from ilog.web.application import redirect_to, redirect_back
+from ilog.web.application import menus, redirect_to, redirect_back
 from ilog.web.permissions import (admin_permission, manager_permission,
-                                  require_permissions)
-from ilog.web.signals import ctxnav_build
+                                  require_permissions, admin_or_manager_permission)
 from ilog.web.views.admin.forms import AddChannel, EditChannel, DeleteChannel
 
-channels = Module(__name__, name="admin.channels", url_prefix="/admin/channels")
+channels = Blueprint("admin.channels", __name__, url_prefix="/admin/channels")
+
+def check_for_admin_or_manager(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_or_manager_permission) and
+            (request.blueprint=='admin' or request.blueprint.startswith('admin.')))
+
+def check_for_admin_or_manager_and_blueprint(menu_item):
+    return (g.identity.account is not None and
+            g.identity.can(admin_or_manager_permission) and
+            request.blueprint=='admin.channels')
 
 
-@ctxnav_build.connect_via(channels)
-def on_channels_ctxnav_build(emitter):
-    if request.path.startswith(url_for('admin.channels.index')):
-        return (
-            # prio, endpoint, name, partial also macthes
-            (1, 'admin.channels.index', _("List Channels"), False),
-            (2, 'admin.channels.add', _("Add Channel"), False),
-        )
+def request_endpoint_startswith_admin_accounts(menu_item):
+    return request.blueprint=='admin.channels'
+
+menus.add_menu_entry(
+    'nav', _("Channels"), 'admin.channels.index',
+    activewhen=request_endpoint_startswith_admin_accounts,
+    visiblewhen=check_for_admin_or_manager, classes="admin"
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("List Channels"), 'admin.channels.index',
+    visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
+)
+menus.add_menu_entry(
+    'ctxnav', _("Add Channel"), 'admin.channels.add', priority=1,
+    visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
+)
 
 
 #@channels.route('/', defaults={'network': None, 'page': 1})

@@ -19,6 +19,12 @@ running = signal("running", """\
 Emitted once a daemon is running.
 """)
 
+chrooting = signal("chrooting", """\
+Emitted once a daemon is about to chroot.
+This is done late because of python imports. Import everything you need before
+this signal.
+""")
+
 shutdown = signal("shutdown", """\
 Emitted once a daemon starts to shutdown.
 """)
