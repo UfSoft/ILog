@@ -22,7 +22,7 @@
   <body class="ui-widget-content">
     <div id="container">
       <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
-        {{ app.menubuilder.render('account_nav', 'ul') }}
+        {{ menubuilder.render('account_nav', 'ul') }}
       </div>
       <div id="header-logo">
         <span class="name">IRC Logging Network</span><br/>
@@ -34,14 +34,14 @@
           {{- total_networks_logged -}}
         </span> networks</span>
       </div>
-      {% if app.menubuilder.has_menu('nav') -%}
+      {% if menubuilder.has_menu('nav') -%}
       <div id="nav" class="ui-widget-header ui-corner-all">
-        {{ app.menubuilder.render('nav', 'ul') }}
+        {{ menubuilder.render('nav', 'ul') }}
       </div>
       {%- endif %}
-      {% if app.menubuilder.has_menu('ctxnav') -%}
+      {% if menubuilder.has_menu('ctxnav') -%}
       <div id="ctxnav">
-        {{ app.menubuilder.render('ctxnav', 'ul') }}
+        {{ menubuilder.render('ctxnav', 'ul') }}
       </div>
       {%- endif %}
 
