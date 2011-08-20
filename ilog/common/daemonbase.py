@@ -123,10 +123,11 @@ class BaseDaemon(object):
                     sys.exit(1)
 
     def write_pid(self):
+        if self.__pid is None:
+            self.__pid = os.getpid()
         if not self.pidfile:
             return
         self.check_pid()
-        self.__pid = os.getpid()
         f = open(self.pidfile,'wb')
         f.write(str(self.__pid))
         f.close()
@@ -139,7 +140,7 @@ class BaseDaemon(object):
         @type pidfile: C{str}
         @param pidfile: The path to the PID tracking file.
         """
-        if not os.path.isfile(self.pidfile):
+        if self.pidfile is None or not os.path.isfile(self.pidfile):
             return
         import logging
         log = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ class BaseDaemon(object):
                 log.warn("No permission to delete pid file")
             else:
                 log.error("Failed to unlink PID file: %s", e)
-        except:
+        except Exception, e:
             log.error("Failed to unlink PID file: %s", e)
 
     def drop_privileges(self):
