@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
+import re
 import logging
 import unicodedata
 from datetime import datetime, timedelta
@@ -24,6 +25,7 @@ from ilog.database import dbm, BaseQuery
 log = logging.getLogger(__name__)
 
 def gen_slug(name):
+    name = re.compile(r'([\W]+)+').sub('-', name)
     return '-'.join(
         unicodedata.normalize('NFKD', name).encode('ascii','ignore').split()
     ).lower()
@@ -357,7 +359,7 @@ class Network(dbm.Model):
     name          = dbm.Column(dbm.String(30))
     host          = dbm.Column(dbm.String(30))
     port          = dbm.Column(dbm.Integer)
-    encoding      = dbm.Column(dbm.String(25))
+    encoding      = dbm.Column(dbm.String(25), default="UTF-8")
     features      = dbm.Column(dbm.PickleType)
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
@@ -438,7 +440,7 @@ class Channel(dbm.Model):
     prefix        = dbm.Column(dbm.String(30))
     name          = dbm.Column(dbm.String(30))
     key           = dbm.Column(dbm.String(30))
-    encoding      = dbm.Column(dbm.String(25))
+    encoding      = dbm.Column(dbm.String(25), default="UTF-8")
     created_on    = dbm.Column(dbm.DateTime, default=datetime.utcnow)
     topic_id      = dbm.Column(dbm.ForeignKey('topic_changes.id'))
     created_by_id = dbm.Column(dbm.ForeignKey("accounts.id"))
