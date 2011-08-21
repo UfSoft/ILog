@@ -9,7 +9,7 @@
 """
 
 
-from flask import Blueprint, request, url_for, render_template, flash, g
+from flask import Blueprint, request, url_for, render_template, flash, g, session
 from flaskext.babel import gettext as _
 from ilog.common import convert
 from ilog.database import dbm
@@ -49,7 +49,7 @@ menus.add_menu_entry(
     visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
 )
 menus.add_menu_entry(
-    'ctxnav', _("Add Networks"), 'admin.networks.add', priority=1,
+    'ctxnav', _("Add Network"), 'admin.networks.add', priority=1,
     visiblewhen=check_for_admin_or_manager_and_blueprint, classes="admin"
 )
 
@@ -73,20 +73,24 @@ def index(page=1):
 @networks.route('/add', methods=("GET", "POST"))
 @require_permissions((admin_permission, manager_permission), http_exception=403)
 def add():
+    if not request.values:
+        session.pop('skip-connect', None)
     form = AddNetwork(formdata=request.values.copy())
     if form.validate_on_submit():
-        print 'create'
-        network = Network(name=form.data.get('name'),
-                          host=form.data.get('host'),
-                          port=form.data.get('port'))
+        network = Network(
+            name=form.data.get('name'),
+            host=form.data.get('host'),
+            port=form.data.get('port')
+        )
+
         if form.isupport_options is not None:
-            network.features = form.isupport_options
+            network.features = form.isupport_options._features
 
-        if form.motd is not None:
-            encoding, motd = convert.to_unicode(form.motd)
-            network.motd = NetworkMotd(motd)
-            network.encoding = encoding
+        if form.data.get('motd', None) is not None:
+            network.motd = NetworkMotd(form.data.get('motd'))
 
+        if form.data.get('encoding', None) is not None:
+            network.encoding = form.data.get('encoding')
 
         account = g.identity.account
         group = Group.query.get("manager")
@@ -99,6 +103,7 @@ def add():
         network.created_by = account
         dbm.session.add(network)
         dbm.session.commit()
+        session.pop('skip-connect', None)
         flash(_("Network \"%(name)s\" added.", name=network.name))
         return redirect_to("admin.networks.edit", slug=network.slug)
 

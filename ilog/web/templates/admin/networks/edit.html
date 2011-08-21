@@ -1,6 +1,10 @@
 {% extends "admin/_formbase.html" %}
 {% from "_form_helpers.html" import render_field %}
 
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='irc-formatting.css') }}">
+{% endblock %}
+
 {% block form_contents %}
   {{ render_field(form.name, {'size': 20}) }}
   {{ render_field(form.host, {'size': 20}) }}
@@ -8,9 +12,9 @@
   {{ render_field(form.slug, {'size': 20}) }}
   {{ render_field(form.encoding, {'size': 20}) }}
   {% if form.db_entry.motd %}
-  <fieldset class="ui-corner-all">
+  <fieldset class="ui-corner-all motd">
     <legend>MOTD</legend>
-    <pre>{{ form.db_entry.motd.motd }}</pre>
+    <pre>{{ form.db_entry.motd.motd | ircformat }}</pre>
     <p>Last updated on: {{ form.db_entry.motd.updated_on | datetimeformat }}</p>
   </fieldset>
   {% endif %}
@@ -18,7 +22,7 @@
     <p>
       <strong>{% trans %}Note:{% endtrans %}</strong>
       {% trans %}An attempt to connect to the network will be made and this can,
-      at some, times take up to 30 seconds.{% endtrans %}
+      at some times, take up to 30 seconds.{% endtrans %}
     </p>
   </div>
 {% endblock %}

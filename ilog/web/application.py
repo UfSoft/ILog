@@ -111,6 +111,9 @@ class Application(Flask):
         self.register_blueprint(channels)
         self.register_blueprint(networks)
 
+        from ilog.web.utils.jinjafilters import format_irc_message
+        self.jinja_env.filters['ircformat'] = format_irc_message
+
     def on_database_upgraded(self, emitter):
         # WebApp setup is complete. Signal it.
         webapp_setup_complete.send(self)
@@ -168,7 +171,7 @@ def get_redirect_target(invalid_targets=()):
 
 
 def redirect_back(*args, **kwargs):
-    """Redirect back to the page we are comming from or the URL rule given.
+    """Redirect back to the page we are coming from or the URL rule given.
     """
     code = kwargs.pop('code', 302)
     target = get_redirect_target(kwargs.pop('invalid_targets', ()))

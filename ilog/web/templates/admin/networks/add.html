@@ -2,9 +2,13 @@
 {% from "_form_helpers.html" import render_field %}
 
 {% block form_contents %}
+  {% if form.name.errors %}
   {{ render_field(form.name, {'size': 20}) }}
+  {% endif %}
   {{ render_field(form.host, {'size': 20}) }}
   {{ render_field(form.port, {'size': 6}) }}
+  {{ form.encoding() }}
+  {{ form.motd() }}
   <div class="flash-message ui-state-highlight ui-corner-all">
     <p>
       <strong>{% trans %}Note:{% endtrans %}</strong>
