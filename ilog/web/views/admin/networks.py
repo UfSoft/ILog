@@ -18,7 +18,6 @@ from ilog.web.application import menus, redirect_to, redirect_back
 from ilog.web.permissions import (admin_permission, manager_permission,
                                   admin_or_manager_permission,
                                   require_permissions)
-from ilog.web.signals import ctxnav_build, nav_build
 from ilog.web.views.admin.forms import AddNetwork, DeleteNetwork, EditNetwork
 
 networks = Blueprint("admin.networks", __name__, url_prefix="/admin/networks")

@@ -14,7 +14,6 @@ from flask import Blueprint, render_template, request
 from flaskext.babel import gettext as _
 from ilog.database import dbm
 from ilog.web.application import app, url_for, menus
-from ilog.web.signals import nav_build, ctxnav_build
 
 log = logging.getLogger(__name__)
 

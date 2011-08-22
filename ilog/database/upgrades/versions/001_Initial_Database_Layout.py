@@ -242,18 +242,13 @@ def upgrade(migrate_engine):
     managers.privileges.add(Privilege("manager"))
     session.add(managers)
 
-#    log.debug("Adding initial administration account => username: admin  "
-#              "password: admin  DO NOT FORGET TO CHANGE IT!!!")
-#
-#    admin = Account(username='admin', passwd='admin')
-#    admin.groups.add(admins)
-#    session.add(admin)
-    session.commit()
+    log.warn("Adding initial administration account => username: admin  "
+             "password: admin  DO NOT FORGET TO CHANGE IT!!!")
 
-    # The first account created will be an administrator!!!
-    migrate_engine.execute(
-        group_accounts.insert(), group_id=admins.id, account_id=1
-    )
+    admin = Account(username='admin', passwd='admin', confirmed=True)
+    admin.groups.add(admins)
+    session.add(admin)
+    session.commit()
 
 def downgrade(migrate_engine):
     # Operations to reverse the above upgrade go here.

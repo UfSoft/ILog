@@ -24,8 +24,7 @@ from ilog.web.application import app, config, menus, redirect_to, redirect_back
 from ilog.web.forms import (DeleteAccountForm, LoginForm, RegisterForm,
                             ProfileForm, ExtraEmailForm)
 from ilog.web.mail import mail, Message
-from ilog.web.permissions import authenticated_permission
-from ilog.web.signals import ctxnav_build, nav_build
+from ilog.web.permissions import authenticated_permission, admin_permission
 
 log = logging.getLogger(__name__)
 
@@ -263,9 +262,11 @@ def profile():
 
     token_url = url_for('account.profile_rpx', _external=True)
     app_domain = app.config.get('JANRAIN_APP_DOMAIN', None)
+    is_admin = admin_permission.allows(g.identity)
 
-    return render_template('account/profile.html', form=form,
-                           token_url=token_url, app_domain=app_domain)
+    return render_template(
+        'account/profile.html', form=form, token_url=token_url,
+        app_domain=app_domain, is_admin=is_admin)
 
 @account.route('/register', methods=('GET', 'POST'))
 def register():

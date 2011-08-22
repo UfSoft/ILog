@@ -8,7 +8,11 @@
       <img class="profile" src="{{ profile_photo.url }}"/>
     </fieldset>
   {% endif %}
-  {{ render_disabled_input(form.username, {'size': 20}) }}
+  {% if is_admin %}
+    {{ render_field(form.username, {'size': 20}) }}
+  {% else %}
+    {{ render_field(form.username, {'size': 20, "disabled": "disabled"}) }}
+  {% endif %}
   {{ render_field(form.display_name, {'size': 20}) }}
   {{ render_field(form.timezone) }}
   {{ render_field(form.locale) }}

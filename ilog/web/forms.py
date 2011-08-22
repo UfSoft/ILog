@@ -97,7 +97,7 @@ class RegisterForm(FormBase):
                                     "registred with us."))
 
     def validate_username(self, field):
-        if Account.query.filter_by(username=field.data).first():
+        if Account.query.by_username(field.data):
             raise ValidationError(_("The username \"%(username)s\" is already "
                                     "in use. Please choose another one.",
                                     username=field.data))
@@ -137,8 +137,7 @@ def select_multi_checkbox(field, ul_class='multi-checkbox', **kwargs):
 class ProfileForm(_DBBoundForm):
     title           = _("My Profile")
     id              = HiddenField(validators=[Required()])
-    username        = HiddenField(_("Username"), validators=[Required()])
-#    username        = TextField(_("Username"))
+    username        = TextField(_("Username"), validators=[Required()])
     display_name    = TextField(_("Display Name"), validators=[Required()])
     timezone        = SelectField(_("Timezone"))
     locale          = SelectField(_("Locale"),
@@ -165,6 +164,13 @@ class ProfileForm(_DBBoundForm):
         ]
         self.providers.query_factory = lambda: self.db_entry.providers
 
+    def process(self, formdata=None, *args, **kwargs):
+        fields = {}
+        username = getattr(self.db_entry, 'username', None)
+        fields["username"] = fields["hidden_username"] = username
+        fields.update(kwargs)
+        super(ProfileForm, self).process(formdata, *args, **fields)
+
     def validate_providers(self, field):
         providers_difference = self.db_entry.providers.difference(field.data)
         if len(self.db_entry.providers) < 2 and providers_difference:
@@ -182,6 +188,30 @@ class ProfileForm(_DBBoundForm):
             flash(_("Your \"%(provider)s\" account provider was removed "
                     "sucessfully.", provider=entry.provider), "ok")
             self.db_entry.providers.remove(entry)
+
+    def validate_display_name(self, field):
+        if field.data != self.db_entry.display_name:
+            account = Account.query.filter_by(display_name=field.data)
+            if account:
+                display_name = field.data
+                field.data = self.db_entry.display_name
+                raise ValidationError(_(
+                    "Display name \"%s\" already in use" % display_name
+                ))
+
+    def validate_username(self, field):
+        if field.data and field.data != self.db_entry.username:
+            account = Account.query.by_username(field.data)
+            if account and account.id != self.db_entry.id:
+                raise ValidationError(
+                    _("The username \"%s\" is already in use. "
+                      "Please choose a different one." % field.data)
+                )
+
+    def validate(self):
+        if not self.username.data:
+            self.username.data = self.db_entry.username
+        return super(ProfileForm, self).validate()
 
 class ExtraEmailForm(FormBase):
     title           = _("Extra Email Address")
