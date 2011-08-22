@@ -15,9 +15,8 @@
     <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery.corner.js') }}"></script>
 
-    {% block head %}
-        <title>ILog &mdash; {% block title %}Welcome{% endblock %}</title>
-    {% endblock %}
+    <title>ILog &mdash; {% block title %}Welcome{% endblock %}</title>
+    {% block head %}{% endblock %}
   </head>
   <body class="ui-widget-content">
     <div id="container">

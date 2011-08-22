@@ -9,9 +9,7 @@
 """
 
 import os
-import sys
 import logging
-import gevent
 from urlparse import urlparse, urljoin
 from flask import Flask, flash, g, redirect, url_for, request, session, Markup
 from flask.signals import request_started, request_finished
@@ -20,11 +18,10 @@ from flask.signals import request_started, request_finished
 from flaskext import menubuilder
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
-from flaskext.menubuilder import MenuBuilder, MenuItemContent
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm, signals
 from ilog.web import defaults
-from .signals import webapp_setup_complete, webapp_shutdown, ctxnav_build, nav_build
+from .signals import webapp_setup_complete, webapp_shutdown, after_identity_account_loaded
 from .mail import mail
 
 log = logging.getLogger(__name__)
@@ -120,8 +117,6 @@ class Application(Flask):
 
     def shutdown(self):
         log.info("ILog web Application shut down")
-#        webapp_shutdown.send(self, _waitall=True)
-#        shutdown.send(self, _waitall=True)
         webapp_shutdown.send(self)
         shutdown.send(self)
 
@@ -258,53 +253,35 @@ menus.add_menu_entry(
     visiblewhen=check_for_admin_or_manager_permission
 )
 
-# Account Navigation building
-@app.context_processor
-def process_context():
-    from .permissions import admin_permission, admin_or_manager_permission
-
-    if g.identity.account is not None and not menus.has_item_by_id('profile_photo', 'account_nav'):
+def generate_profile_photo_content(menu_item):
+    if g.identity.account is not None:
         profile_photo = g.identity.account.profile_photos.filter_by(preferred=True).first()
-        profile_photo_menuitem = menubuilder.MenuItemContent(
-            '<img width="22" height="22" src="%s">' % profile_photo.url,
-            _("My Profile"), priority=-2, id='profile_photo',
-            activewhen=menubuilder.ANYTIME,
-            visiblewhen=lambda mi: g.identity.account is not None,
-            li_classes="first", classes="first", builder=menus.builder, is_link=False
-        )
-        menus.add_menu_item('account_nav', profile_photo_menuitem)
+        if not profile_photo:
+            return
+        return '<img width="22" height="22" src="%s">' % profile_photo.url
+    return
 
+profile_photo_menuitem = menubuilder.MenuItemContent(
+    generate_profile_photo_content, priority=-2,
+    activewhen=menubuilder.ANYTIME,
+    visiblewhen=lambda mi: g.identity.account is not None,
+    li_classes="first", classes="first", builder=menus.builder,
+    is_link=False
+)
+menus.add_menu_item('account_nav', profile_photo_menuitem)
 
-    if g.identity.account is not None and \
-                            not g.identity.account.confirmed and not \
+@app.context_processor
+def theme_name_in_jinja_context():
+    return dict(theme_name = app.config.get("THEME_NAME", 'smoothness'))
+
+@after_identity_account_loaded.connect_via(app)
+def account_related_actions(sender, account=None):
+    if account is not None and not account.confirmed and not \
                             session.get('_skip_verified_warning', False):
         message = Markup("You're account is not yet verified! "
                          "<a href=\"%s\">Resend confirmation email</a>." %
                          url_for('account.resend_activation_email'))
         flash(message, "error")
-
-    return dict(
-        app = app,
-        theme_name = app.config.get("THEME_NAME", 'smoothness'),
-        request_path=request.path
-    )
-
-@app.context_processor
-def account_related_actions():
-    account = g.identity.account
-    if account is None:
-        profile_photo = None
-    else:
-        if not account.confirmed and not \
-                                session.get('_skip_verified_warning', False):
-            message = Markup("You're account is not yet verified! "
-                             "<a href=\"%s\">Resend confirmation email</a>." %
-                             url_for('account.resend_activation_email'))
-            flash(message, "error")
-
-        profile_photo = account.profile_photos.filter_by(preferred=True).first()
-
-    return dict(profile_photo=profile_photo)
 
 @app.context_processor
 def get_total_events():
@@ -341,6 +318,8 @@ def on_request_started(app):
 
     if request.path in build_no_warning_urls():
         session['_skip_verified_warning'] = True
+    elif request.path.startswith(url_for('account.activate', hash='')):
+        session['_skip_verified_warning'] = True
 
 
     redirect_target = get_redirect_target(session.pop('_redirect_target', ()))
@@ -357,18 +336,3 @@ def on_request_finished(app, response):
         skip_verified_warning = session.pop('_skip_verified_warning', None)
         if skip_verified_warning:
             app.save_session(session, response)
-
-
-import gevent.monkey
-gevent.monkey.patch_all()
-
-#@app.before_request
-#def before_request():
-#    from flask import flash
-#    flash("Foo error", "error")
-#    flash("Foo Ok", "ok")
-#    flash("Foo info", "info")
-#    flash("Foo message", "message")
-#    flash("Foo Config", "config")
-#    flash("Foo add", "add")
-#    flash("Foo remove", "remove")

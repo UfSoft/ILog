@@ -16,6 +16,7 @@ from ilog.database import dbm
 from ilog.database.signals import database_setup
 from ilog.database.models import Account, Privilege
 from .application import app
+from .signals import after_identity_account_loaded
 
 log = logging.getLogger(__name__)
 
@@ -47,12 +48,13 @@ def load_request_identity():
         identity = Identity(session['uid'], "cookie")
     else:
         identity = AnonymousIdentity()
+        identity.account = None
     return identity
 
 @principal.identity_saver
 def save_request_identity(identity):
     log.trace("On save_request_identity: %s", identity)
-    if not identity.account:
+    if getattr(identity, 'account', None) is None:
         log.trace("No account associated with identity. Nothing to store.")
         return
 
@@ -66,7 +68,7 @@ def save_request_identity(identity):
 
         privilege = Privilege.query.get(need)
         if not privilege:
-            log.debug("Privilege does not existe. creating...")
+            log.debug("Privilege does not exist. creating...")
             privilege = Privilege(need)
 
         if privilege not in identity.account.privileges:
@@ -92,6 +94,7 @@ def on_identity_loaded(sender, identity):
                 for privilege in group.privileges:
                     # Add the group privileges to the user
                     identity.provides.add(RoleNeed(privilege.name))
+            after_identity_account_loaded.send(sender, account=identity.account)
 
     except OperationalError:
         # Database has not yet been setup

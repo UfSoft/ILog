@@ -18,10 +18,6 @@ webapp_shutdown = signal("webapp-shutdown", """\
 Emitted once the web application has been fully shutdown.
 """)
 
-nav_build = signal("nav-build", """\
-Emitted in order to get navigational contents.
-""")
-
-ctxnav_build = signal("ctxnav-build", """\
-Emitted in order to get context navigation contents.
+after_identity_account_loaded = signal("after-identity-account-loaded", """\
+Emmited after loading the identity from the database.
 """)

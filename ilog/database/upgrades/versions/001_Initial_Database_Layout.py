@@ -10,12 +10,13 @@ from sqlalchemy import orm
 from sqlalchemy.orm import create_session
 from sqlalchemy.ext.declarative import declarative_base
 from uuid import uuid4
+from werkzeug.security import generate_password_hash
 from ilog.database import dbm
 
 Model = declarative_base(name='Model')
 metadata = Model.metadata
 
-log = logging.getLogger('evafm.core.upgrades.001')
+log = logging.getLogger('ilog.database.upgrades.001')
 
 class SchemaVersion(Model):
     """SQLAlchemy-Migrate schema version control table."""
@@ -71,6 +72,17 @@ class Account(Model):
     profile_photos  = dbm.dynamic_loader("ProfilePhoto", backref="account",
                                          cascade="all, delete, delete-orphan")
 
+    def __init__(self, username=None, display_name=None, confirmed=False,
+                 passwd=None, tzinfo="UTC", locale="en"):
+        self.username = username
+        self.display_name = display_name and display_name or username
+        self.confirmed = confirmed
+        if passwd:
+            self.set_password(passwd)
+
+    def set_password(self, password):
+        self.passwd_hash = generate_password_hash(password)
+
 class ProfilePhoto(Model):
     __tablename__   = 'profile_photos'
     id              = dbm.Column(dbm.Integer, primary_key=True)
@@ -122,7 +134,9 @@ class Group(Model):
     name          = dbm.Column(dbm.String(30))
 
     accounts      = dbm.dynamic_loader("Account", secondary="group_accounts",
-                                       backref=dbm.backref("groups", lazy=True))
+                        backref=dbm.backref("groups", lazy=True,
+                                            collection_class=set))
+
     privileges    = dbm.relation("Privilege", secondary="group_privileges",
                                  backref="priveliged_groups", lazy=True,
                                  collection_class=set, cascade='all, delete')
@@ -227,11 +241,19 @@ def upgrade(migrate_engine):
     managers = Group("Managers")
     managers.privileges.add(Privilege("manager"))
     session.add(managers)
+
+#    log.debug("Adding initial administration account => username: admin  "
+#              "password: admin  DO NOT FORGET TO CHANGE IT!!!")
+#
+#    admin = Account(username='admin', passwd='admin')
+#    admin.groups.add(admins)
+#    session.add(admin)
     session.commit()
 
     # The first account created will be an administrator!!!
-    migrate_engine.execute(group_accounts.insert(), group_id=admins.id,
-                           account_id=1)
+    migrate_engine.execute(
+        group_accounts.insert(), group_id=admins.id, account_id=1
+    )
 
 def downgrade(migrate_engine):
     # Operations to reverse the above upgrade go here.

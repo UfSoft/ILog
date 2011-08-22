@@ -14,8 +14,8 @@ gevent.monkey.patch_all()
 from gevent import wsgi, pool
 
 import logging
-from ilog import __web_bin_name__
-from ilog.common.daemonbase import BaseDaemon, BaseOptionParser
+from st.daemon import BaseDaemon, BaseOptionParser
+from ilog import __web_bin_name__, __package_name__, __version__
 
 class FilelikeLogger(object):
     LOG_FORMAT = ('%(client_ip)s "%(request_line)s"'
@@ -29,6 +29,8 @@ class FilelikeLogger(object):
 
 class Daemon(BaseDaemon):
 
+    LOG_FMT = '%(asctime)s,%(msecs)03.0f [%(name)-30s][%(levelname)-8s] %(message)s'
+
     def __init__(self, serve_host="127.0.0.1", serve_port=5000,
                  use_reloader=False, **kwargs):
         super(Daemon, self).__init__(**kwargs)
@@ -41,7 +43,7 @@ class Daemon(BaseDaemon):
 
     @classmethod
     def cli(cls):
-        parser = BaseOptionParser()
+        parser = BaseOptionParser(__package_name__, __version__)
         parser.add_option('-H', '--hostname', default="127.0.0.1",
                           help="Hostname or IP to bind the webserver to.")
         parser.add_option('-P', '--port', default=5000, type="int",
@@ -68,6 +70,8 @@ class Daemon(BaseDaemon):
     def run(self):
         from ilog.web.application import app
         from ilog.common.signals import daemonized, running
+        logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
+        logging.getLogger('migrate').setLevel(logging.INFO)
         logging.getLogger(__name__).info("Webserver Daemon Running")
         daemonized.send(self)
         def start_serving():
@@ -82,7 +86,6 @@ class Daemon(BaseDaemon):
             import werkzeug.serving
             start_serving = werkzeug.serving.run_with_reloader(start_serving)
 
-#        running
         logging.getLogger(__name__).info("before spawning serve")
         serve = gevent.spawn(start_serving)
         logging.getLogger(__name__).info("after spawning serve")
@@ -90,8 +93,6 @@ class Daemon(BaseDaemon):
         logging.getLogger(__name__).info("running signal sent")
 
         serve.join()
-#        while True:
-#            gevent.sleep(10)
 
     def exit(self):
         self.exited = False
@@ -105,10 +106,6 @@ class Daemon(BaseDaemon):
         shutdown.connect(on_web_shutdown)
         logging.getLogger(__name__).debug("Shutdown webserver")
         app.shutdown()
-        while not self.exited:
-            # Waiting for everyhting to finish up...
-            pass
-#        time.sleep(0.4)
 
 def start_daemon():
     return Daemon.cli()

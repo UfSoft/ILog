@@ -346,7 +346,7 @@ def register():
 def activate(hash):
     activation_key = ActivationKey.query.get(hash)
     if not activation_key:
-        flash(_("Activation Key Not Known. Plobably Expired"))
+        flash(_("Activation Key Not Known. Probably Expired"))
         if g.identity.account:
             return redirect_back('account.profile')
         return redirect_back('account.signin')
