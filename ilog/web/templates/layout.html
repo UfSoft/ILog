@@ -7,18 +7,18 @@
     <meta charset="utf-8">
     <link rel="icon" type="image/ico" href="{{ url_for('static', filename='favicon.ico') }}">
     <link class="ui-theme" rel="stylesheet" type="text/css"
-          href="{{ url_for('static', filename='ext/%s/jquery-ui.custom.css' % theme_name ) }}">
+          href="{{ url_for('static', filename='ext/%s/jquery-ui-1.8.16.custom.css' % theme_name ) }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='default.css') }}">
     <link class="ui-theme" rel="stylesheet" type="text/css"
           href="{{ url_for('static', filename='%s.css' % theme_name ) }}">
-    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-1.4.3.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-ui-1.8.7.custom.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-1.6.2.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery-ui-1.8.16.custom.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery.corner.js') }}"></script>
 
     <title>ILog &mdash; {% block title %}Welcome{% endblock %}</title>
     {% block head %}{% endblock %}
   </head>
-  <body class="ui-widget-content">
+  <body>
     <div id="container">
       <div id="account-nav" class="ui-corner-br ui-corner-bl ui-helper-clearfix ui-state-default">
         {{ menubuilder.render('account_nav', 'ul') }}
