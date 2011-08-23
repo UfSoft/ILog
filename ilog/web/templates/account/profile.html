@@ -15,7 +15,7 @@
   {% endif %}
   {{ render_field(form.display_name, {'size': 20}) }}
   {{ render_field(form.timezone) }}
-  {{ render_field(form.locale) }}
+  {% if form.locale.choices|length > 1 %}{{ render_field(form.locale) }}{% endif %}
   <fieldset>
     <legend>{% if form.providers.label %}<label for="{{ form.providers.id }}">{{ form.providers.label }}</label>{% endif %}</legend>
     {% if form.providers.description %}
@@ -28,20 +28,20 @@
     {% if app_domain -%}
       <a class="rpxnow" onclick="return false;"
          href="http://{{ app_domain }}/openid/embed?token_url={{ token_url }}">
-        <input type="button" class="ui-button disabled" disabled="disabled" value="{{ _('Associate Another Account Provider') }}"></input>
+        <input type="button" class="ui-button disabled" disabled="disabled" value="{{ _('Associate Account Provider') }}"></input>
       </a>
     {%- endif %}
   </fieldset>
   <fieldset class="ui-corner-all">
     <legend>{{ form.password.label }}</legend>
-    {{ form.password(class_=(form.password.errors and 'error' or ''), size=20) }}
+    {{ form.password(class_=' '.join(['ui-widget', 'ui-widget-content', 'ui-corner-all', (form.password.errors and 'error' or '')]), size=20) }}
     {% if form.password.errors %}
     <span class="error">{% for error in form.password.errors -%}{{ error }}&nbsp;{% endfor %}</span>
     {% endif %}
     {% if form.password.description %}
     <br/><span class="help">{{ form.password.description }}</span>
     {% endif %}<br/>
-    {{ form.password_confirm(class_=(form.password_confirm.errors and 'error' or ''), size=20) }}{% if form.password_confirm.errors %}
+    {{ form.password_confirm(class_=' '.join(['ui-widget', 'ui-widget-content', 'ui-corner-all', (form.password_confirm.errors and 'error' or '')]), size=20) }}{% if form.password_confirm.errors %}
     <span class="error">{% for error in form.password_confirm.errors -%}{{ error }}&nbsp;{% endfor %}</span>
     {% endif %}
     <br/><span class="help">{{ form.password_confirm.label }}</span>
@@ -64,8 +64,95 @@
     RPXNOW.overlay = true;
     RPXNOW.language_preference = '{{ config.get("BABEL_DEFAULT_LOCALE", "en") }}';
     $(document).ready(function() {
-      $('a.rpxnow>input').attr('disabled', '').removeClass("disabled");
+      $('a.rpxnow>input').removeAttr('disabled').removeClass("disabled");
     })
   </script>
   {%- endif %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+
+      $("#locale").selectmenu({
+        "style": "dropdown",
+        "width": $("#username").width()+10,
+        "menuWidth": $("#username").width()+10
+      });
+
+      var options = new Array();
+      $("#timezone>option").each(function() {
+        options.push({label: $(this).html(), value: $(this).html(), elem: this});
+      });
+
+      function reset_autocomplete_height() {
+        $(".ui-autocomplete").css({
+            "height": "",
+            "overflow-y": "",
+            "overflow-x": ""
+        });
+      }
+      function set_autocomplete_height() {
+        reset_autocomplete_height();
+        if ($(".ui-autocomplete").height() > 250) {
+          $(".ui-autocomplete").css({
+            "height": 250,
+            "overflow-y": "auto",
+            "overflow-x": "hidden"
+          })
+        }
+      }
+
+      var select = $("#timezone").hide();
+      var input = $("<input id='tz-sel'>")
+          .insertAfter(select)
+          .autocomplete({
+            select: function(event, entry) {
+              if (!entry.item) {
+                // remove invalid value, as it didn't match anything
+                $(this).val("");
+                return false;
+              }
+              entry.item.elem.selected=1;
+            },
+            source: options,
+            delay: 0,
+            minLength: 0,
+            open: function(event, ui) { set_autocomplete_height(); },
+            close: function(event, ui) { reset_autocomplete_height(); },
+            change: function(event, ui) { set_autocomplete_height() }
+        }).addClass("ui-widget ui-widget-content ui-corner-left");
+
+      input.val($("#timezone>option:selected").html());
+      input.autocomplete("select", $("#timezone>option:selected").html());
+
+      var button = $("<button id='tz-btn'>&nbsp;</button>")
+        .insertAfter(input)
+        .button({
+          icons: {
+            primary: "ui-icon-triangle-1-s"
+          },
+          text: false
+        }).removeClass("ui-corner-all")
+          .addClass("ui-corner-right ui-button-icon")
+          .position({
+            my: "left center",
+            at: "right center",
+            of: input,
+            offset: "-1 0"
+          }).css("top", "")
+          .click(function() {
+            // close if already visible
+            if (input.autocomplete("widget").is(":visible")) {
+              input.autocomplete("close");
+              return false;
+            }
+            // pass empty string as value to search for, displaying all results
+            input.autocomplete("search", "");
+            input.focus();
+            return false;
+          })
+     $("body:not(.ui-autocomplete)").live("click", function() {
+       input.autocomplete("close");
+     })
+
+   })
+  </script>
 {% endblock %}

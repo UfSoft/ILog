@@ -2,7 +2,7 @@
 {% macro render_field(field, options={}, show_description=True) %}
   <fieldset class="ui-corner-all">
   <legend>{% if field.label %}<label for="{{ field.id }}">{{ field.label }}</label>{% endif %}</legend>
-  {{ field(class_=' '.join([options.pop('class_', ''), options.pop('class', ''), (field.errors and 'error' or '')]).strip(), **options) }}
+  {{ field(class_=' '.join(['ui-widget', 'ui-widget-content', 'ui-corner-all', options.pop('class_', ''), options.pop('class', ''), (field.errors and 'error' or '')]).strip(), **options) }}
   {% if field.errors %}
     <span class="error">{% for error in field.errors -%}{{ error }}&nbsp;{% endfor %}</span>
   {% endif %}

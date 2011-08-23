@@ -186,6 +186,8 @@ menus = menubuilder.MenuBuilder(app)
 @babel.localeselector
 def get_locale():
     # if a user is logged in, use the locale from the user settings
+    if len(babel.list_translations()) == 1:
+        return babel.list_translations()[0].language
     identity = getattr(g, 'identity', None)
     if identity is not None and identity.name != 'anon':
         account = getattr(identity, 'account', None)

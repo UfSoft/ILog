@@ -11,7 +11,10 @@
 
 import logging
 import gevent
-import pytz
+try:
+    from pytz.gae import pytz
+except ImportError:
+    import pytz
 from flask import flash, Markup
 from flaskext.babel import gettext as _
 from flaskext.wtf import *
@@ -210,7 +213,13 @@ class ProfileForm(_DBBoundForm):
 
     def validate(self):
         if not self.username.data:
+            # In case the user is not an admin. The field will be disabled,
+            # so, no data is submitted for it.
             self.username.data = self.db_entry.username
+        if not self.locale.data:
+            # In case there's only one locale, then the field is not
+            # rendered. Re-set the default.
+            self.locale.data = self.db_entry.locale
         return super(ProfileForm, self).validate()
 
 class ExtraEmailForm(FormBase):

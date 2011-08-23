@@ -1,6 +1,10 @@
 {% extends "layout.html" %}
 {% from "_form_helpers.html" import render_field %}
 
+{% block head %}
+<link class="ui-theme" rel="stylesheet" type="text/css"
+      href="{{ url_for('static', filename='ext/jquery.ui.selectmenu.css' ) }}">
+{% endblock %}
 {% block title %}{{ form.title }}{% endblock %}
 
 {% block contents %}
@@ -17,6 +21,7 @@
 {% endblock %}
 
 {% block footer %}
+<script type="text/javascript" src="{{ url_for('static', filename='ext/jquery.ui.selectmenu.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function(){
     console.log("_formbase script");
