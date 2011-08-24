@@ -64,7 +64,6 @@ def index(page=1):
             i.id for i in pagination.items if
             i.created_by==g.identity.account and i.channels.count() == 0
         ]
-    print [i.channels for i in pagination.items ]
     return render_template('admin/networks/index.html', pagination=pagination,
                            own_networks=own_networks,
                            is_admin=g.identity.can(admin_permission))
