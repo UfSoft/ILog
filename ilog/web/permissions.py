@@ -10,7 +10,9 @@
 
 import logging
 from flask import g, session
+from flaskext.babel import _
 from flaskext.principal import *
+from flaskext.wtf import fields, Form, ValidationError
 from sqlalchemy.exc import OperationalError
 from ilog.database import dbm
 from ilog.database.signals import database_setup
@@ -104,7 +106,7 @@ def on_identity_loaded(sender, identity):
 #def require_permissions(f, needs=(), denials=()):
 def require_permissions(perms, from_keys=(), http_exception=None):
     def wrapped(f):
-        def decorated(*args, **kwargs):
+        def decorated(klass, *args, **kwargs):
             if isinstance(from_keys, basestring):
                 keys = [from_keys]
             else:
@@ -126,12 +128,21 @@ def require_permissions(perms, from_keys=(), http_exception=None):
                 if not isinstance(permission, Permission):
                     permission = Permission(ActionNeed(permission))
                 if permission.allows(g.identity):
-                    return f(*args, **kwargs)
+                    return f(klass, *args, **kwargs)
 
                 denied_permissions.append(permission)
 
             if denied_permissions:
-                if http_exception:
+                if isinstance(klass, Form):
+                    # Some black magic to restore the value to it's original
+                    field = args[0]
+                    field_value_from_db = getattr(field, 'value_from_db', None)
+                    if field_value_from_db and field_value_from_db != field.data:
+                        field.data = field_value_from_db
+                        raise ValidationError(_(
+                            "You're not allowed to change this field."
+                        ))
+                elif http_exception:
                     abort(http_exception, denied_permissions)
                 else:
                     raise PermissionDenied(denied_permissions)

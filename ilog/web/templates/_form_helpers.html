@@ -3,9 +3,6 @@
   <fieldset class="ui-corner-all">
   <legend>{% if field.label %}<label for="{{ field.id }}">{{ field.label }}</label>{% endif %}</legend>
   {{ field(class_=' '.join(['ui-widget', 'ui-widget-content', 'ui-corner-all', options.pop('class_', ''), options.pop('class', ''), (field.errors and 'error' or '')]).strip(), **options) }}
-  {% if field.errors %}
-    <span class="error">{% for error in field.errors -%}{{ error }}&nbsp;{% endfor %}</span>
-  {% endif %}
   {% if field.description and show_description %}
     {% if field.widget.input_type != 'checkbox' %}<br/>{% endif -%}
     <span class="help">{{ field.description }}</span>

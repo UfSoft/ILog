@@ -22,7 +22,8 @@ from babel.dates import get_timezone_name
 from werkzeug.datastructures import MultiDict
 
 from ilog.database.models import Account, AccountProvider
-from .application import cache, babel, get_locale
+from .application import g, cache, babel, get_locale
+from .permissions import admin_permission, require_permissions
 
 log = logging.getLogger(__name__)
 
@@ -44,8 +45,7 @@ def build_timezones(locale=None):
         if tz.startswith('Etc/') or tz.startswith('GMT') or tz in skip_zones:
             continue
         timezones[get_timezone_name(pytz.timezone(tz), locale=locale)] = tz
-    for key in sorted(timezones.keys()):
-        yield timezones[key], key
+    return [(timezones[key], key) for key in sorted(timezones.keys())]
 
 class FormBase(Form):
     def __init__(self, formdata=None, *args, **kwargs):
@@ -55,9 +55,21 @@ class FormBase(Form):
 
     def validate(self, extra_validators=None):
         rv = super(Form, self).validate()
+        errors = []
         if 'csrf' in self.errors:
-            flash(_("Form Token Is Invalid. You MUST have cookies enabled."),
-                  "error")
+            del self.errors['csrf']
+            errors.append(
+                _("Form Token Is Invalid. You MUST have cookies enabled.")
+            )
+        for field_name, ferrors in self.errors.iteritems():
+            errors.append(
+                "<b>%s:</b> %s" % (
+                self._fields[field_name].label.text, '; '.join(ferrors)
+            ))
+        if errors:
+            flash(Markup(_("Errors:") + "<ul>%s</ul>" %
+                "".join(["<li>%s</li>" %e for e in errors])
+            ), "error")
         return rv
 
 class LoginForm(FormBase):
@@ -115,7 +127,7 @@ class _DBBoundForm(FormBase):
         for name in self._fields.keys():
             value = getattr(self.db_entry, name, None)
             if value:
-                fields[name] = value
+                self._fields[name].value_from_db = fields[name] = value
         fields.update(kwargs)
         super(_DBBoundForm, self).process(formdata, *args, **fields)
 
@@ -167,13 +179,6 @@ class ProfileForm(_DBBoundForm):
         ]
         self.providers.query_factory = lambda: self.db_entry.providers
 
-    def process(self, formdata=None, *args, **kwargs):
-        fields = {}
-        username = getattr(self.db_entry, 'username', None)
-        fields["username"] = fields["hidden_username"] = username
-        fields.update(kwargs)
-        super(ProfileForm, self).process(formdata, *args, **fields)
-
     def validate_providers(self, field):
         providers_difference = self.db_entry.providers.difference(field.data)
         if len(self.db_entry.providers) < 2 and providers_difference:
@@ -189,34 +194,37 @@ class ProfileForm(_DBBoundForm):
                 )
         for entry in providers_difference:
             flash(_("Your \"%(provider)s\" account provider was removed "
-                    "sucessfully.", provider=entry.provider), "ok")
+                    "successfully.", provider=entry.provider), "ok")
             self.db_entry.providers.remove(entry)
 
     def validate_display_name(self, field):
         if field.data != self.db_entry.display_name:
-            account = Account.query.filter_by(display_name=field.data)
-            if account:
+            account = Account.query.filter_by(display_name=field.data).first()
+            if account and account.id!=self.db_entry.id:
                 display_name = field.data
                 field.data = self.db_entry.display_name
                 raise ValidationError(_(
-                    "Display name \"%s\" already in use" % display_name
+                    "Display name \"%(display_name)s\" already in use",
+                    display_name=display_name
                 ))
 
+    @require_permissions(admin_permission)
     def validate_username(self, field):
         if field.data and field.data != self.db_entry.username:
             account = Account.query.by_username(field.data)
             if account and account.id != self.db_entry.id:
                 raise ValidationError(
-                    _("The username \"%s\" is already in use. "
-                      "Please choose a different one." % field.data)
+                    _("The username \"%(username)s\" is already in use. "
+                      "Please choose a different one.", username=field.data)
                 )
+
 
     def validate(self):
         if not self.username.data:
             # In case the user is not an admin. The field will be disabled,
             # so, no data is submitted for it.
             self.username.data = self.db_entry.username
-        if not self.locale.data:
+        if self.locale.data is None:
             # In case there's only one locale, then the field is not
             # rendered. Re-set the default.
             self.locale.data = self.db_entry.locale
