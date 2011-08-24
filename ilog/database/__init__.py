@@ -293,6 +293,15 @@ class Model(object):
 
     __tablename__ = _ModelTableNameDescriptor()
 
+    def update_from_form(self, form):
+        for name in form._fields.keys():
+            column_value = getattr(self, name, None)
+            form_value = form._fields[name].data
+            if isinstance(column_value, orm.collections.InstrumentedSet):
+                form_value = InstrumentedSet(form_value)
+            if column_value and form_value != column_value:
+                setattr(self, name, form._fields[name].data)
+
 
 class ConnectTimeout(Exception):
     """Connection timeout."""

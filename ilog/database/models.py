@@ -146,7 +146,7 @@ class AccountProvider(dbm.Model):
     def __repr__(self):
         return '<%s for %r>' % (self.__class__.__name__, self.provider)
 
-class AccountQuery(orm.Query):
+class AccountQuery(BaseQuery):
 
     def expired_activations(self):
         return self.filter(dbm.and_(
@@ -307,7 +307,7 @@ class GroupQuery(BaseQuery):
     def get(self, privilege):
         if isinstance(privilege, basestring):
             return self.filter(Group.name==privilege).first()
-        return orm.Query.get(privilege)
+        return BaseQuery.get(self, privilege)
 
 class Group(dbm.Model):
     __tablename__ = 'groups'
@@ -430,7 +430,7 @@ class ChannelQuery(BaseQuery):
     def get(self, slug_or_id):
         if isinstance(slug_or_id, basestring):
             return self.filter(Channel.slug==slug_or_id).first()
-        return orm.Query.get(slug_or_id)
+        return BaseQuery.get(self, slug_or_id)
 
 class Channel(dbm.Model):
     __tablename__ = 'channels'
