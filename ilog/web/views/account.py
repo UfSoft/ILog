@@ -247,15 +247,7 @@ def profile():
     account = Account.query.get(g.identity.account.id)
     form = ProfileForm(account)
     if form.validate_on_submit():
-        locale = request.values.get('locale')
-        timezone = request.values.get('timezone')
-        if locale != account.locale:
-            account.locale = locale
-        if timezone != account.timezone:
-            account.timezone = timezone
-        password = request.values.get('password')
-        if password:
-            account.set_password(password)
+        account.update_from_form(form)
         dbm.session.commit()
         flash(_("Account details updated."), "ok")
         return redirect_to('account.profile')

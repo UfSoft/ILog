@@ -11,7 +11,7 @@
   {% if is_admin %}
     {{ render_field(form.username, {'size': 20}) }}
   {% else %}
-    {{ render_field(form.username, {'size': 20, "disabled": "disabled"}) }}
+    {{ render_field(form.username, {'size': 20, "disabled": "disabled", "class": "ui-state-disabled"}) }}
   {% endif %}
   {{ render_field(form.display_name, {'size': 20}) }}
   {{ render_field(form.timezone) }}
