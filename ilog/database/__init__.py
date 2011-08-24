@@ -298,7 +298,7 @@ class Model(object):
             column_value = getattr(self, name, None)
             form_value = form._fields[name].data
             if isinstance(column_value, orm.collections.InstrumentedSet):
-                form_value = InstrumentedSet(form_value)
+                form_value = orm.collections.InstrumentedSet(form_value)
             if column_value and form_value != column_value:
                 setattr(self, name, form._fields[name].data)
 
