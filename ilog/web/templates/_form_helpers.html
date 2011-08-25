@@ -69,3 +69,9 @@
   </script>
 {% endif %}
 {% endmacro %}
+
+{% macro render_boolean_image(value) %}
+  <center><span class="{{ value and 'ui-state-default-text' or 'ui-state-error-text'}}">
+    <span class="ui-icon {{ value and 'ui-icon-check' or 'ui-icon-alert'}}">&nbsp;</span>
+  </span></center>
+{% endmacro %}

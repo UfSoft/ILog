@@ -274,16 +274,29 @@ menus.add_menu_item('account_nav', profile_photo_menuitem)
 
 @app.context_processor
 def theme_name_in_jinja_context():
-    return dict(theme_name = app.config.get("THEME_NAME", 'smoothness'))
+    return dict(theme_name = app.config.get("THEME_NAME", 'redmond'))
+#    theme = request.args.get('theme', app.config.get("THEME_NAME", 'redmond'))
+#    return dict(theme_name = theme)
 
 @after_identity_account_loaded.connect_via(app)
 def account_related_actions(sender, account=None):
-    if account is not None and not account.confirmed and not \
-                            session.get('_skip_verified_warning', False):
-        message = Markup("You're account is not yet verified! "
-                         "<a href=\"%s\">Resend confirmation email</a>." %
-                         url_for('account.resend_activation_email'))
-        flash(message, "error")
+    if account and session.get('_skip_verified_warning', False):
+        if not account.confirmed:
+            message = Markup(_(
+                "You're account is not yet verified! "
+                "<a href=\"%(url)s\">Resend confirmation email</a>.",
+                url=url_for('account.emails.notify')
+            ))
+            flash(message, "error")
+        else:
+            for email in account.get_unverified_addresses():
+                message = Markup(_(
+                    "Your email address \"%(address)s\" is not yet verified! "
+                    "<a href=\"%(href)s\">Resend confirmation email</a>.",
+                    address=email.address,
+                    href=url_for('account.emails.notify')
+                ))
+                flash(message, "warn")
 
 @app.context_processor
 def get_total_events():
@@ -315,14 +328,14 @@ def on_request_started(app):
     def build_no_warning_urls():
         return (
             url_for('account.register'),
-            url_for('account.resend_activation_email')
+            url_for('account.activate', hash=''),
+            url_for('account.emails.notify')
         )
 
-    if request.path in build_no_warning_urls():
-        session['_skip_verified_warning'] = True
-    elif request.path.startswith(url_for('account.activate', hash='')):
-        session['_skip_verified_warning'] = True
-
+    for url in build_no_warning_urls():
+        if request.path == url or request.path.startswith(url):
+            session['_skip_verified_warning'] = session.modified = True
+            break
 
     redirect_target = get_redirect_target(session.pop('_redirect_target', ()))
     if redirect_target is not None:

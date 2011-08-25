@@ -190,9 +190,10 @@ class Account(dbm.Model):
 
     identities    = None    # Defined on Identity
 
-    email_addresses = dbm.relation("EMailAddress", backref="account",
-                                   collection_class=set,
-                                   cascade="all, delete, delete-orphan")
+    email_addresses = dbm.relationship("EMailAddress", backref="account",
+                                       collection_class=set,
+                                       lazy='dynamic',
+                                       cascade="all, delete, delete-orphan")
     profile_photos  = dbm.dynamic_loader("ProfilePhoto", backref="account",
                                          cascade="all, delete, delete-orphan")
 
@@ -222,6 +223,9 @@ class Account(dbm.Model):
 
     def update_last_login(self):
         self.last_login = datetime.utcnow()
+
+    def get_unverified_addresses(self):
+        return self.email_addresses.filter_by(verified=False).all()
 
 
 class ProfilePhoto(dbm.Model):

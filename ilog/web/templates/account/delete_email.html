@@ -1,0 +1,11 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  <p class="description">{% trans address=form.address.data -%}
+    Are you you want to remove the email address <b>{{ address }}</b> from your account?
+  {%- endtrans %}</p>
+{% endblock %}
+{% block form_actions %}
+  {{ form.cancel(class_='ui-button') }}
+  {{ form.confirm(class_='ui-button sensible') }}
+{% endblock %}

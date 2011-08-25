@@ -1,0 +1,12 @@
+{% extends 'emails/layout.txt' -%}
+{% block body %}{% trans name=account.display_name, site='ILog' -%}
+
+Hi {{ name }}!
+
+You have added this email address on {{ site }}.
+Please follow the link bellow to complete the email address verification:
+
+  {{ activation_url }}
+
+See you soon on {{ site }}!
+{%- endtrans %}{% endblock %}

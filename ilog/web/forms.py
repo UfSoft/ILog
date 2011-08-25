@@ -21,7 +21,7 @@ from flaskext.wtf import *
 from babel.dates import get_timezone_name
 from werkzeug.datastructures import MultiDict
 
-from ilog.database.models import Account, AccountProvider
+from ilog.database.models import Account, AccountProvider, EMailAddress
 from .application import g, cache, babel, get_locale
 from .permissions import admin_permission, require_permissions
 
@@ -229,6 +229,52 @@ class ProfileForm(_DBBoundForm):
             # rendered. Re-set the default.
             self.locale.data = self.db_entry.locale
         return super(ProfileForm, self).validate()
+
+class AccountEmails(_DBBoundForm):
+    title           = _("Email Addresses")
+
+    preferred   = QuerySelectField("preferred", validators=[Required()])
+    update      = SubmitField(_("Update"))
+
+    def __init__(self, db_entry=None, formdata=None, *args, **kwargs):
+        super(AccountEmails, self).__init__(db_entry, formdata, *args, **kwargs)
+        self.preferred.query_factory = lambda: self.db_entry.email_addresses
+
+    def validate_preferred(self, field):
+        if self.update.data is False:
+            return
+        for email in self.db_entry.email_addresses:
+            email.preferred = email is field.data
+            if email.preferred:
+                flash(_(
+                    "Your preferred email address is now \"%(address)s\"",
+                    address=email.address
+                ))
+
+class DeleteEmailForm(_DBBoundForm):
+    title           = _("Remove Email Address")
+
+    address      = HiddenField("address")
+    confirm      = SubmitField(_("Confirm"))
+    cancel       = SubmitField(_("Cancel"))
+
+    def __init__(self, db_entry=None, formdata=None, *args, **kwargs):
+        super(DeleteEmailForm, self).__init__(db_entry, formdata, *args, **kwargs)
+
+
+class AddEmailForm(_DBBoundForm):
+    title           = _("Add Email Address")
+
+    address      = TextField(_("Email Address"), validators=[Required(), Email()])
+    submit       = SubmitField(_("Submit"))
+
+    def validate_address(self, field):
+        if EMailAddress.query.get(field.data):
+            raise ValidationError(
+                _("\"%(address)s\" is already in use.", address=field.data)
+            )
+
+
 
 class ExtraEmailForm(FormBase):
     title           = _("Extra Email Address")

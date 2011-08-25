@@ -1,0 +1,61 @@
+{% extends "_formbase.html" %}
+{% from "_form_helpers.html" import render_boolean_image %}
+
+{% block form_contents %}
+  <table class="listing ui-corner-all" width="100%">
+    <thead>
+      <tr class="ui-state-default">
+        <th>{% trans %}Address{% endtrans %}</th>
+        <th class="small">{% trans %}Preferred{% endtrans %}</th>
+        <th class="small">{% trans %}Verified{% endtrans %}</th>
+        <th class="actions">{% trans %}Actions{% endtrans %}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for email in g.identity.account.email_addresses %}
+      <tr class="{{ loop.cycle('odd', 'even') }}">
+        <td><tt>{{ email.address }}</tt></td>
+        <td class="small center">
+          {% if email.verified %}
+          <input type="radio" name="preferred"{{ email.preferred and ' checked="checked"' or ''}} value="{{ email.address }}"/>
+          {% else %}&nbsp;{% endif %}
+        </td>
+        <td class="small center">
+          {{ render_boolean_image(email.verified) }}
+        </td>
+        <td class="small actions">
+          <a class="delete" alt="{{ _('Delete') }}" title="{{ _('Delete') }}"
+             href="{{ url_for('account.emails.delete', address=email.address) }}">{{ _('Delete') }}</a>
+          {% if not email.verified %}
+          <a class="email" alt="{{ _('Resend Activation Email') }}"
+             title="{{ _('Resend Activation Email') }}"
+             href="{{ url_for('account.emails.notify', address=email.address) }}">
+               {{ _('Resend Activation Email') }}
+             </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block form_actions %}
+  {{ form.update() }}
+  <a href="{{ url_for('account.emails.add') }}">
+    <input class="ui-button" type="button" value="{{ _('Add Email Address') }}"/>
+  </a>
+{% endblock %}
+
+{% block form_footer %}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $("td.actions>a.email").html("").button({text: false, icons: {primary: "ui-icon-mail-closed"}});
+      $("td.actions>a.delete").html("").button({text: false, icons: {primary: "ui-icon-trash"}});
+      $("#update").hide();
+      $("input[name=preferred]").bind("change", function() {
+        $("input[name=update]").click()
+      })
+    })
+  </script>
+{% endblock %}

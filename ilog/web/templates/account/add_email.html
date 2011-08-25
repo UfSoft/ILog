@@ -1,0 +1,8 @@
+{% extends "_formbase.html" %}
+
+{% block form_contents %}
+  {{ render_field(form.address, {'size': 20}) }}
+{% endblock %}
+{% block form_actions %}
+  {{ form.submit(class_='ui-button') }}
+{% endblock %}

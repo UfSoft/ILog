@@ -22,29 +22,56 @@ from ilog.database.models import (Account, AccountProvider, EMailAddress,
                                   ActivationKey, ProfilePhoto)
 from ilog.web.application import app, config, menus, redirect_to, redirect_back
 from ilog.web.forms import (DeleteAccountForm, LoginForm, RegisterForm,
-                            ProfileForm, ExtraEmailForm)
+                            ProfileForm, ExtraEmailForm, AccountEmails,
+                            DeleteEmailForm, AddEmailForm)
 from ilog.web.mail import mail, Message
 from ilog.web.permissions import authenticated_permission, admin_permission
 
 log = logging.getLogger(__name__)
 
 account = Blueprint("account", __name__, url_prefix='/account')
+emails = Blueprint("account.emails", __name__, url_prefix='/account/emails')
+
+@account.record
+def register_sub_blueprints(state):
+    state.app.register_blueprint(emails)
 
 def check_wether_account_is_not_none(menu_item):
-    return g.identity.account is not None and request.blueprint=='account'
+    return g.identity.account is not None and (
+        request.blueprint=='account' or
+        request.blueprint.startswith('account.')
+    )
 
-def request_endpoint_startswith_accounts(menu_item):
-    return request.blueprint=='account' and request.endpoint.startswith('account.')
+def request_endpoint_startswith_account(menu_item):
+    return request.endpoint.startswith('account.') and (
+        request.blueprint=='account' or
+        request.blueprint.startswith('account.')
+    )
+
+def request_endpoint_startswith_account_email(menu_item):
+    return (
+        request.blueprint=='account' and
+        request.endpoint=='account.emails'
+    ) or (
+        request.blueprint=='account.emails' and
+        request.endpoint.startswith('account.emails.')
+    )
 
 menus.add_menu_entry(
     'nav', _("My Profile"), 'account.profile',
-    activewhen=request_endpoint_startswith_accounts,
+    activewhen=request_endpoint_startswith_account,
     visiblewhen=check_wether_account_is_not_none
 )
 
 menus.add_menu_entry(
-    'ctxnav', _("Profile Details"), 'account.profile',
+    'ctxnav', _("Profile Details"), 'account.profile', priority=-1,
     visiblewhen=check_wether_account_is_not_none
+)
+
+menus.add_menu_entry(
+    'ctxnav', _("Email Addresses"), 'account.emails',
+    visiblewhen=check_wether_account_is_not_none,
+    activewhen=request_endpoint_startswith_account_email
 )
 
 menus.add_menu_entry(
@@ -55,16 +82,6 @@ menus.add_menu_entry(
     'ctxnav', _("Profile Photos"), 'account.photos', priority=2,
     visiblewhen=check_wether_account_is_not_none
 )
-
-#
-#@ctxnav_build.connect_via(account)
-#def on_networks_ctxnav_build(emitter):
-#    return (
-#        # prio, endpoint, name, partial also macthes
-#        (1, 'account.profile', _("Profile Details"), False),
-#        (2, 'account.formats', _("Date & Time Formats"), False),
-#        (2, 'account.photos', _("Profile Photos"), False),
-#    )
 
 @account.route('/signin', methods=("GET", "POST"))
 def signin():
@@ -345,9 +362,19 @@ def activate(hash):
         return redirect_back('account.signin')
 
     activation_key.email.verified = True
-    activation_key.email.account.confirmed = True
-    if len(activation_key.email.account.email_addresses) == 1:
+    if activation_key.email.account.email_addresses.count() == 1:
         activation_key.email.preferred = True
+
+    if activation_key.email.account.confirmed:
+        # Account is already active, user just added an
+        # extra email address.
+        dbm.session.commit()
+        flash(_("The email address \"%(address)s\" is now verified.",
+                address=activation_key.email.address))
+        return redirect_back('account.profile')
+
+    activation_key.email.account.confirmed = True
+
     message = Message(_("ILog: Welcome to %(website)s", website="ILog"),
                       recipients=[activation_key.email.address])
     body = render_template('emails/welcome.txt',
@@ -357,41 +384,9 @@ def activate(hash):
     dbm.session.delete(activation_key)
     dbm.session.commit()
     flash(_("Your account is now fully active."))
-    return redirect_to('account.profile')
-
-@account.route("/resend-activation-email")
-def resend_activation_email():
-    account = g.identity.account
-    if not account:
-        flash("You have to authenticate first!", "warn")
-        return redirect_to("account.signin")
-
-    messages = []
-
-    for email in account.email_addresses:
-        if email.activation_key is not None:
-            dbm.session.delete(email.activation_key)
-            email.activation_key = ActivationKey()
-            dbm.session.commit()
-            message = Message(_("ILog: Please Confirm You Email Address"),
-                              recipients=[email.address])
-            body = render_template('emails/initial_email_confirm.txt',
-                account=account, activation_url=url_for(
-                    'account.activate', hash=email.activation_key.key,
-                    _external=True
-                )
-            )
-            message.body = body
-            messages.append(message)
-            flash(_("An email has been sent to %(address)s in order to confirm "
-                    "the email address", address=email.address))
-
-    for message in messages:
-        gevent.spawn_later(1, mail.send, message)
-
     return redirect_back('account.profile')
 
-@account.route('/delete-account', methods=('GET', 'POST'))
+@account.route('/delete', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
 def delete_account():
     if 'cancel' in request.values:
@@ -409,6 +404,115 @@ def delete_account():
         return redirect_to("main.index")
 
     return render_template('account/delete.html', form=form)
+
+@account.route('/emails', endpoint="emails", methods=('GET', 'POST'))
+@authenticated_permission.require(401)
+def account_emails():
+    form = AccountEmails(g.identity.account, request.values.copy())
+    if form.validate_on_submit():
+        print '890'
+    return render_template('account/emails.html', form=form)
+
+
+@emails.route("/add", methods=('GET', 'POST'), endpoint="add")
+@authenticated_permission.require(401)
+def add_email():
+
+    form = AddEmailForm(request.values.copy())
+    if form.validate_on_submit():
+        email = EMailAddress(form.address.data)
+        email.activation_key = ActivationKey()
+        g.identity.account.email_addresses.append(email)
+        dbm.session.commit()
+
+        message = Message(_("ILog: Please Confirm You Email Address"),
+                          recipients=[email.address])
+
+        activation_url = url_for(
+            'account.activate', hash=email.activation_key.key,
+            _external=True
+        )
+        body = render_template(
+            'emails/email_confirm.txt', account=account,
+            activation_url=activation_url
+        )
+        message.body = body
+        log.trace("Sending confirmation email.")
+        mail.send(message)
+        log.trace("Sent confirmation email.")
+        flash(_("An email has been sent to confirm the email address "
+                "%(email_address)s.", email_address=email.address))
+        return redirect_back('account.profile')
+    return render_template('account/add_email.html', form=form)
+
+
+@emails.route("/delete/<address>", methods=('GET', 'POST'), endpoint="delete")
+@authenticated_permission.require(401)
+def delete_email(address=None):
+    if g.identity.account.email_addresses.count() < 2:
+        flash(_("You at least one active email address at all times"), "warn")
+        return redirect_back("account.emails")
+
+
+    email_address = EMailAddress.query.get(address)
+
+    form = DeleteEmailForm(email_address, request.values.copy())
+    if form.validate_on_submit():
+        if form.cancel.data:
+            return redirect_to("account.emails")
+
+        dbm.session.delete(email_address)
+        dbm.session.commit()
+        flash(_("The email address \"%(address)s\" was removed from your account",
+                address=address), "ok")
+        return redirect_to("account.emails")
+    return render_template('account/delete_email.html', form=form)
+
+@emails.route("/notify", endpoint="notify", defaults={"address": None})
+@emails.route("/notify/<address>", endpoint="notify")
+@authenticated_permission.require(401)
+def resend_activation_email(address=None):
+    messages = []
+
+    if address:
+        email_address = EMailAddress.query.get(address)
+        if email_address.verified:
+            flash(_("The email address \"%(address)s\" is already verified.",
+                    address=email_address.address))
+            return redirect_back('account.profile')
+
+        addresses = [email_address]
+        template = "emails/email_confirm.txt"
+    else:
+        addresses = account.email_addresses
+        template = "emails/initial_email_confirm.txt"
+
+    for email in addresses:
+        if email.activation_key is not None:
+            dbm.session.delete(email.activation_key)
+
+        email.activation_key = ActivationKey()
+        dbm.session.commit()
+        session['_skip_verified_warning'] = session.modified = True
+
+        message = Message(_("ILog: Please Confirm You Email Address"),
+                          recipients=[email.address])
+        body = render_template(template,
+            account=account, activation_url=url_for(
+                'account.activate', hash=email.activation_key.key,
+                _external=True
+            )
+        )
+        message.body = body
+        messages.append(message)
+        flash(_("An email has been sent to %(address)s in order to confirm "
+                "the email address", address=email.address))
+
+    for message in messages:
+        gevent.spawn_later(1, mail.send, message)
+
+    return redirect_back('account.profile')
+
 
 @account.route('/photos', methods=('GET', 'POST'))
 @authenticated_permission.require(401)
