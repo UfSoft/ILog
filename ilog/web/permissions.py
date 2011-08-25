@@ -106,7 +106,7 @@ def on_identity_loaded(sender, identity):
 #def require_permissions(f, needs=(), denials=()):
 def require_permissions(perms, from_keys=(), http_exception=None):
     def wrapped(f):
-        def decorated(klass, *args, **kwargs):
+        def decorated(*args, **kwargs):
             if isinstance(from_keys, basestring):
                 keys = [from_keys]
             else:
@@ -128,14 +128,14 @@ def require_permissions(perms, from_keys=(), http_exception=None):
                 if not isinstance(permission, Permission):
                     permission = Permission(ActionNeed(permission))
                 if permission.allows(g.identity):
-                    return f(klass, *args, **kwargs)
+                    return f(*args, **kwargs)
 
                 denied_permissions.append(permission)
 
             if denied_permissions:
-                if isinstance(klass, Form):
+                if args and isinstance(args[0], Form):
                     # Some black magic to restore the value to it's original
-                    field = args[0]
+                    field = args[1]
                     field_value_from_db = getattr(field, 'value_from_db', None)
                     if field_value_from_db and field_value_from_db != field.data:
                         field.data = field_value_from_db
