@@ -24,11 +24,12 @@
 <script type="text/javascript" src="{{ url_for('static', filename='ext/jquery.ui.selectmenu.js') }}"></script>
 <script type="text/javascript">
   $(document).ready(function(){
-    console.log("_formbase script");
+    $("input.ui-button").button()
+    /*console.log("_formbase script");
     var inputs = $("div.actions>input");
     $("div.actions>input").each(function(){
       $(this).addClass('ui-button');
-    })
+    })*/
   })
 </script>
 {% block form_footer %}{% endblock %}

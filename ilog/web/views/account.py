@@ -74,14 +74,14 @@ menus.add_menu_entry(
     activewhen=request_endpoint_startswith_account_email
 )
 
-menus.add_menu_entry(
-    'ctxnav', _("Date & Time Formats"), 'account.formats', priority=2,
-    visiblewhen=check_wether_account_is_not_none
-)
-menus.add_menu_entry(
-    'ctxnav', _("Profile Photos"), 'account.photos', priority=2,
-    visiblewhen=check_wether_account_is_not_none
-)
+#menus.add_menu_entry(
+#    'ctxnav', _("Date & Time Formats"), 'account.formats', priority=2,
+#    visiblewhen=check_wether_account_is_not_none
+#)
+#menus.add_menu_entry(
+#    'ctxnav', _("Profile Photos"), 'account.photos', priority=2,
+#    visiblewhen=check_wether_account_is_not_none
+#)
 
 @account.route('/signin', methods=("GET", "POST"))
 def signin():

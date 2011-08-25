@@ -28,7 +28,7 @@
     {% if app_domain -%}
       <a class="rpxnow" onclick="return false;"
          href="http://{{ app_domain }}/openid/embed?token_url={{ token_url }}">
-        <input type="button" class="ui-button disabled" disabled="disabled" value="{{ _('Associate Account Provider') }}"></input>
+        <input type="button" class="ui-button ui-button ui-widget ui-state-disabled" disabled="disabled" value="{{ _('Associate Account Provider') }}"></input>
       </a>
     {%- endif %}
   </fieldset>
@@ -49,8 +49,8 @@
   </fieldset>
 {% endblock %}
 {% block form_actions %}
-  <input class="ui-button" type="submit" value="{{ _('Update') }}">
-  <input class="ui-button sensible" name="delete_account" type="submit" value="{{ _('Delete Account') }}">
+  <input class="ui-button ui-widget ui-state-default" type="submit" value="{{ _('Update') }}">
+  <input class="ui-button ui-widget ui-state-default sensible" name="delete_account" type="submit" value="{{ _('Delete Account') }}">
 {% endblock %}
 
 
@@ -64,8 +64,9 @@
     RPXNOW.overlay = true;
     RPXNOW.language_preference = '{{ config.get("BABEL_DEFAULT_LOCALE", "en") }}';
     $(document).ready(function() {
-      $('a.rpxnow>input').removeAttr('disabled').removeClass("disabled");
+      $('a.rpxnow>input').button("enable")
     })
+
   </script>
   {%- endif %}
   <script type="text/javascript">

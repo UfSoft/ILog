@@ -263,6 +263,8 @@ div.flash-message {
   margin-top: 6px;
   padding: 4px 2px;
 
+  input.ui-button { font-family: "Gputeks Bold"; }
+
   form {
 
     div.formbox.error {
@@ -326,7 +328,8 @@ div.flash-message {
       }
     }
 
-    input, select { padding: 0.4em; }
+    input, select { padding: 0.4em 1.0em; }
+    input.ui-button { padding: 0.2em 0.4em; }
 
     input.error {
       border-color: #ff0000;
@@ -368,16 +371,11 @@ div.flash-message {
       margin-top: -1px;
       padding: 3px 3px;
 
-      .ui-button {
-        font-family: "Gputeks Bold";
-        padding: 0.1em 0.3em;
-        color: #444;
-      }
-
       .ui-button.sensible {
         color: #ff0000;
         text-shadow: 1px 1px 1px #AAAAAA;
       }
+
     }
   }
 }
