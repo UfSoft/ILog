@@ -10,8 +10,9 @@
 
 from flask import Blueprint, request, g, render_template
 from flaskext.babel import gettext as _
+from ilog.database.models import Account
 from ilog.web.application import menus
-from ilog.web.permissions import admin_permission
+from ilog.web.permissions import admin_permission, require_permissions
 from ilog.web.views.admin import check_for_admin
 
 accounts = Blueprint("admin.accounts", __name__, url_prefix="/admin/accounts")
@@ -41,22 +42,17 @@ menus.add_menu_entry(
     visiblewhen=check_for_admin_and_blueprint, classes="admin"
 )
 menus.add_menu_entry(
-    'ctxnav', _("Add Accounts"), 'admin.accounts.add',
-    visiblewhen=check_for_admin_and_blueprint, classes="admin"
-)
-menus.add_menu_entry(
-    'ctxnav', _("Edit Accounts"), 'admin.accounts.edit',
-    visiblewhen=check_for_admin_and_blueprint, classes="admin"
-)
-menus.add_menu_entry(
-    'ctxnav', _("Delete Accounts"), 'admin.accounts.delete',
+    'ctxnav', _("Add Account"), 'admin.accounts.add',
     visiblewhen=check_for_admin_and_blueprint, classes="admin"
 )
 
 
-@accounts.route('/')
-def index():
-    return render_template('index.html')
+@accounts.route('/', defaults={'page': 1})
+@accounts.route('/page/<int:page>')
+@require_permissions(admin_permission, http_exception=403)
+def index(page=1):
+    pagination = Account.query.paginate(page=page, per_page=25)
+    return render_template('admin/accounts/index.html', pagination=pagination)
 
 @accounts.route('/add')
 def add():
