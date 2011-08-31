@@ -23,7 +23,7 @@
   src: url(fonts/V5-Prophit-Black.ttf);
 }
 
-.initial_html_and_body {
+@mixin initial_html_and_body {
   margin: 0px;
   padding: 0px;
   font-family: "Gputeks Regular";
@@ -34,11 +34,11 @@
 .ui-selectmenu { white-space: nowrap; }
 
 html {
-  .initial_html_and_body;
+  @include initial_html_and_body;
 }
 
 body {
-  .initial_html_and_body;
+  @include initial_html_and_body;
 }
 
 
@@ -163,7 +163,7 @@ a:hover, .ui-state-default a:hover {
   text-shadow: 1px 1px 1px #444;
 }
 
-.navigation_items {
+@mixin navigation_items {
   padding: 3px 4px;
   text-shadow: 1px 1px 1px #999999;
 
@@ -172,18 +172,18 @@ a:hover, .ui-state-default a:hover {
 
 }
 
-.drop-shadow {
+@mixin drop-shadow {
   -moz-box-shadow: 1px 6px 10px #888888;
   -webkit-box-shadow: 1px 6px 10px #888888;
   box-shadow: 1px 6px 10px #888888;
 }
 
 #nav {
-  .navigation_items;
+  @include navigation_items;
   margin: 10px 15px 0 10px;
   .ui-widget { font-size: 12px; }
 
-  .drop-shadow;
+  @include drop-shadow;
 
   ul {
     display: inline;
@@ -204,7 +204,7 @@ a:hover, .ui-state-default a:hover {
 }
 
 #ctxnav {
-  .navigation_items;
+  @include navigation_items;
   margin: -3px 5px 10px 30px;
   padding: 0 4px 3px 4px;
   .ui-widget {
@@ -225,7 +225,7 @@ a:hover, .ui-state-default a:hover {
       vertical-align: middle;
 
       a, a:visited {
-        .drop-shadow;
+        @include drop-shadow;
       }
     }
   }

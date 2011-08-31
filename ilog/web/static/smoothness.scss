@@ -1,4 +1,4 @@
-.navigation_items {
+@mixin navigation_items {
   a.active {
     background: url("ext/smoothness/images/ui-bg_glass_65_ffffff_1x400.png") repeat-x scroll 50% 50% #FFFFFF;
     border-top: 1px solid #AAA;
@@ -6,7 +6,7 @@
 }
 
 #nav, #ctxnav {
-  .navigation_items;
+  @include navigation_items;
 }
 
 table.listing {

@@ -18,6 +18,7 @@ from flask.signals import request_started, request_finished
 from flaskext import menubuilder
 from flaskext.cache import Cache
 from flaskext.babel import Babel, gettext as _
+from flaskext.sass import Sass
 from ilog.common.signals import running, shutdown
 from ilog.database import dbm, signals
 from ilog.web import defaults
@@ -70,6 +71,7 @@ class Application(Flask):
             # LessCSS Support
             from flaskext.lesscss import lesscss
             lesscss(self, self.config['LESSC_BIN_PATH'])
+            sass = Sass(self)
 
             from werkzeug.debug import DebuggedApplication
             self.wsgi_app = DebuggedApplication(self.wsgi_app, True)
